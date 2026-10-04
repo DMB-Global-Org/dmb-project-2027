@@ -9,14 +9,33 @@
     },
     "dev": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "passThroughEnv": ["PORT", "FRONTEND_URL", "DATABASE_URL"]
     },
     "start": {
       "dependsOn": ["build"],
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "passThroughEnv": ["PORT", "FRONTEND_URL", "DATABASE_URL"]
     },
     "lint": {},
-    "test": {}
+    "test": {},
+    "db:generate": {
+      "cache": false,
+      "passThroughEnv": ["DATABASE_DIRECT_URL"]
+    },
+    "db:migrate": {
+      "cache": false,
+      "passThroughEnv": ["DATABASE_DIRECT_URL"]
+    },
+    "db:check": {
+      "cache": false,
+      "passThroughEnv": ["DATABASE_DIRECT_URL"]
+    },
+    "db:studio": {
+      "cache": false,
+      "persistent": true,
+      "passThroughEnv": ["DATABASE_DIRECT_URL"]
+    }
   }
 }
