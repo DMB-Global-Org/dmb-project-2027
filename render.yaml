@@ -1,0 +1,39 @@
+# Render Blueprint – https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: dmb-backend
+    runtime: node
+    region: frankfurt # closest to Supabase eu-west-1
+    plan: free
+    branch: main
+    # Deploy only after GitHub checks (incl. the DB migration workflow) have passed.
+    autoDeployTrigger: checksPass
+    # The whole monorepo is checked out; build only the backend workspace.
+    buildCommand: >-
+      corepack enable &&
+      pnpm install --frozen-lockfile --prod=false &&
+      pnpm turbo run build --filter=backend
+    startCommand: pnpm --filter backend start:prod
+    healthCheckPath: /
+    buildFilter:
+      paths:
+        - backend/**
+        - package.json
+        - pnpm-lock.yaml
+        - pnpm-workspace.yaml
+        - turbo.json
+        - render.yaml
+      ignoredPaths:
+        - backend/**/*.spec.ts
+        - backend/test/**
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "24"
+      - key: DATABASE_URL # Supabase transaction pooler (port 6543)
+        sync: false
+      - key: CORS_ORIGINS # e.g. https://dmb-project-2027.vercel.app
+        sync: false
+      - key: CORS_ORIGIN_PATTERN # e.g. ^https://dmb-project-2027-[a-z0-9-]+-dmb-global-org\.vercel\.app$
+        sync: false
