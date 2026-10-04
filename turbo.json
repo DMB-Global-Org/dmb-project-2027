@@ -10,13 +10,13 @@
     "dev": {
       "cache": false,
       "persistent": true,
-      "passThroughEnv": ["PORT", "FRONTEND_URL", "DATABASE_URL"]
+      "passThroughEnv": ["PORT", "CORS_ORIGINS", "CORS_ORIGIN_PATTERN", "DATABASE_URL"]
     },
     "start": {
       "dependsOn": ["build"],
       "cache": false,
       "persistent": true,
-      "passThroughEnv": ["PORT", "FRONTEND_URL", "DATABASE_URL"]
+      "passThroughEnv": ["PORT", "CORS_ORIGINS", "CORS_ORIGIN_PATTERN", "DATABASE_URL"]
     },
     "lint": {},
     "test": {},

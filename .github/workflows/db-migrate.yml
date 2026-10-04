@@ -1,0 +1,38 @@
+name: DB migrate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - backend/drizzle/**
+      - backend/drizzle.config.ts
+      - .github/workflows/db-migrate.yml
+  workflow_dispatch:
+
+# Never run two migrations against the same database at once.
+concurrency:
+  group: db-migrate-production
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    # Holds the DATABASE_DIRECT_URL secret; add protection rules (e.g. required reviewers) here.
+    environment: production
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4 # version taken from "packageManager"
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile --filter backend...
+
+      - name: Apply migrations
+        run: pnpm --filter backend db:migrate
+        env:
+          # Session pooler (port 5432) – GitHub runners have no IPv6, so not db.<ref>.supabase.co
+          DATABASE_DIRECT_URL: ${{ secrets.DATABASE_DIRECT_URL }}
