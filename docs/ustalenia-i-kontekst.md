@@ -41,7 +41,7 @@ Decyzje oznaczone „(zastąpione)” zmieniła sekcja „Zmiany z 30.10.2026”
 
 ### Rejestracja
 12. (zastąpione, patrz 44–45) Pełny formularz z numerami przy rejestracji.
-13. (zastąpione, patrz 46) Wniosek o aktywację trafia do Platyny.
+13. (zastąpione, patrz 46 i 66) Wniosek o aktywację trafia do Platyny.
 14. Rekomendujący musi być w tej samej strukturze platynowej co bezpośrednia Platyna.
 15. (zastąpione, patrz 44) Konta bez weryfikacji zakładane przez Administratora.
 
@@ -101,10 +101,20 @@ Decyzje oznaczone „(zastąpione)” zmieniła sekcja „Zmiany z 30.10.2026”
 60. Materiały dodają SuperAdministrator i Administratorzy.
 61. Opis funkcjonalności sporządzony 30.10.2026; termin realizacji tych funkcjonalności: 30.11.2026.
 
+### Doprecyzowania z 19.11.2026
+62. Pierwsze konta zakłada SuperAdministrator, zanim istnieje jakakolwiek Platyna. Nie mają bezpośredniej Platyny (numer pusty) i leżą w schemacie dla struktury bez Platyny (`org_root`). Przy promocji do Platinum aplikacja najpierw uzupełnia numer bezpośredniej Platyny u całego down-line'u wypromowanej osoby, a potem przenosi organizację do nowego schematu. „Numer Platyny” oznacza numer Partnera (ABO# / Numer PA), nie identyfikator rekordu.
+63. Uwierzytelnianie własne, w backendzie (nie Supabase Auth). Na start rejestracja z hasłem i potwierdzeniem hasła, bez weryfikacji adresu e-mail. Weryfikacja telefonu (WhatsApp lub SMS) odłożona.
+64. Nie przewidujemy degradacji Platyny: rolę Platinum nie można obniżyć (konto można tylko dezaktywować).
+65. Status (Nieaktywny, Aktywny, GoMagic, DiamondSchool) i aktywność konta to osobne pola. Status jest informacją od bezpośredniej Platyny; aktywność konta blokuje logowanie.
+66. Znacznik „profil uzupełniony” ustawia się automatycznie, gdy właściciel poda wszystkie dane i zgody. Konto aktywuje uprawniona osoba (Platyna we własnej organizacji, Administrator, SuperAdministrator) i nadaje rolę. „Wniosek o aktywację” nie powstaje; zastępuje go powiadomienie.
+67. Mailing: dostawca MailerSend. Wysyła Platyna do swojej organizacji, Administrator i SuperAdministrator do swojego zasięgu.
+
 ## Sprawy otwarte
 
 - [ ] Materiały od Administratora: widoczne w całej aplikacji czy tylko w jego dolnej linii?
-- [ ] Kto może wysyłać mailingi?
+- [ ] Zasięg adresatów mailingu marketingowego (Kontakty i Klienci są wspólni ponad strukturami): kogo może zapraszać Platyna, a kogo Administrator?
+- [ ] Weryfikacja e-maila potwierdzeniem linkiem przed wysyłką marketingową (zgody bez weryfikacji adresu są prawnie kruche); do potwierdzenia z prawnikiem.
+- [ ] Domena własna (Vercel, MailerSend: SPF/DKIM) i konfiguracja MailerSend; bez tego nie wyślemy żadnych e-maili.
 - [ ] Weryfikacja telefonu: wybrać SMS lub WhatsApp (porównać dostępność i ceny usług).
 - [ ] Z prawnikiem: znacznik oświadczenia MRA, anonimizacja, przechowywanie logu bez usuwania.
 - [ ] Polityka prywatności: opisać logowanie IP i User-Agent (prawnie uzasadniony interes).

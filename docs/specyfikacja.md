@@ -1,6 +1,6 @@
 # dMb Projekt 2027 – specyfikacja wstępna
 
-Stan na 01.11.2026 (po opisie funkcjonalności z 30.10.2026) · Marek Kustosz. Skopiowano do repozytorium 19.11.2026.
+Stan na 01.11.2026 (po opisie funkcjonalności z 30.10.2026) · Marek Kustosz. Skopiowano do repozytorium 19.11.2026; uzupełniono 19.11.2026 o decyzje 62–67.
 
 Wersja robocza na żywo: https://claude.ai/code/artifact/79b03467-e381-4fce-92c2-a7f26ab27b24
 Tablica Event Storming: https://miro.com/app/board/uXjVHiUeyUM=/
@@ -91,7 +91,7 @@ Użytkownik widzi tylko te materiały, do których uprawnia go jego rola.
 
 ## Obszar 2: Konta i struktura
 
-Konto staje się aktywne, gdy właściciel poda wszystkie wymagane informacje i wyrazi zgody. Wtedy uprawniona osoba (Platyna we własnej organizacji, Administrator lub SuperAdministrator) dostaje wiadomość o aktywowaniu konta i nadaje mu właściwą rolę. Każdy Partner, niezależnie od roli, widzi całą strukturę pod sobą, z wyjątkiem odpiętych organizacji platynowych, wraz ze wszystkimi danymi kont.
+Gdy właściciel poda wszystkie wymagane informacje i wyrazi zgody, konto dostaje automatycznie znacznik „profil uzupełniony”, a uprawniona osoba (Platyna we własnej organizacji, Administrator lub SuperAdministrator) dostaje wiadomość. To ona aktywuje konto (dezaktywowane konto nie może się zalogować) i nadaje mu właściwą rolę. Aktywność konta jest odrębna od Statusu, który jest tylko informacją aktualizowaną przez bezpośrednią Platynę. Każdy Partner, niezależnie od roli, widzi całą strukturę pod sobą, z wyjątkiem odpiętych organizacji platynowych, wraz ze wszystkimi danymi kont.
 
 **Metody zakładania kont**
 
@@ -106,8 +106,14 @@ Przed aktywacją konto Partnera uzupełnia się o dane ustalone wcześniej:
 - imię i nazwisko,
 - numer Partnera (ABO# / Numer PA / Geschäftspartnernummer) i kraj, w którym go nadano,
 - numer bezpośrednio rekomendującego (przy zaproszeniu e-mailem lub linkiem jest nim automatycznie osoba zapraszająca),
-- bezpośrednia Platyna,
+- numer bezpośredniej Platyny (puste tylko u pierwszych kont, zob. „Pierwsze konta i logowanie”),
 - zgody.
+
+**Pierwsze konta i logowanie**
+
+- Pierwsze konta zakłada SuperAdministrator, zanim istnieje jakakolwiek Platyna. Nie mają numeru bezpośredniej Platyny i leżą w schemacie dla struktury bez Platyny (`org_root`). Numer rekomendującego może być pusty tylko tam.
+- Gdy ktoś z takiej struktury zostaje Platyną, aplikacja wpisuje jego numer Partnera jako bezpośrednią Platynę u całego jego down-line'u, a potem przenosi organizację do nowego schematu.
+- Logowanie: e-mail i hasło (przy ustalaniu hasło trzeba potwierdzić), własne rozwiązanie w backendzie. Na start bez weryfikacji adresu e-mail. Powiadomienia i zaproszenia wysyła MailerSend.
 
 **Administrowanie kontem**
 
@@ -124,7 +130,8 @@ Przy manualnym założeniu konta właściciel dostaje powiadomienie z prośbą o
 - Platyna jest administratorem swojej organizacji: nadaje w niej role, zmienia statusy i promuje do Platinum, wyłącznie ręcznie i bez logiki podpowiadania w aplikacji. Nie zmienia własnej roli ani statusu. Osoby z wyższymi pinami nie działają w cudzych strukturach.
 - Administrator może to samo wobec wszystkich kont w swojej dolnej linii rekomendacji, niezależnie od miejsca w strukturze, ale nie nadaje ról Administrator ani SuperAdministrator.
 - SuperAdministrator powstaje z chwilą uruchomienia aplikacji, zakłada pierwsze konta i nadaje dowolne role poza SuperAdministrator.
-- Promocja do Platinum, niezależnie od tego, kto ją nada, przenosi całą organizację tej osoby do osobnego schematu w PostgreSQL. Nowa Platyna od tej chwili sama zarządza swoją organizacją. Dotychczasowa Platyna widzi tylko wpis: kto i kiedy został wypromowany. Nie ma żadnych danych ani podsumowań odpiętej organizacji.
+- Promocja do Platinum, niezależnie od tego, kto ją nada, najpierw uzupełnia numer bezpośredniej Platyny u wszystkich kont w dolnej linii wypromowanej osoby, a następnie przenosi całą jej organizację do osobnego schematu w PostgreSQL. Nowa Platyna od tej chwili sama zarządza swoją organizacją. Dotychczasowa Platyna widzi tylko wpis: kto i kiedy został wypromowany. Nie ma żadnych danych ani podsumowań odpiętej organizacji.
+- Degradacji Platyny nie przewidujemy: rola Platinum nie może zostać obniżona (konto można tylko dezaktywować).
 
 ## Obszar 3: Kontakty
 
@@ -174,16 +181,17 @@ Zebrane dane kontaktowe służą dwóm rodzajom wysyłek.
 
 Mailing marketingowy realizuje trzeci nadrzędny cel aplikacji, czyli e-marketing.
 
+Wysyłki obsługuje MailerSend. Mailingi wysyłają: Platyna do swojej organizacji oraz Administrator i SuperAdministrator do swojego zasięgu.
+
 ## Model danych (szkic)
 
-Dane wspólne są w schemacie głównym, a każda struktura platynowa ma własny schemat PostgreSQL. Drzewo struktury tworzą powiązania Partner → rekomendujący. Bezpośrednia Platyna jest wspólna dla całej struktury.
+Dane wspólne są w schemacie głównym, a każda struktura platynowa ma własny schemat PostgreSQL. Konta bez Platyny (pierwsze konta) leżą w schemacie `org_root`. Drzewo struktury tworzą powiązania Partner → rekomendujący. Bezpośrednia Platyna jest wspólna dla całej struktury.
 
 | Encja | Schemat | Najważniejsze pola |
 | --- | --- | --- |
 | Rola | główny | nazwa, poziom w hierarchii |
 | Platyna (rejestr) | główny | numer Partnera, nazwa schematu, kto wypromował, data promocji |
-| Partner | platynowy | imię, nazwisko, e-mail, telefon (WhatsApp), numer Partnera, kraj numeru, rekomendujący, rola, status (Nieaktywny, Aktywny, GoMagic, DiamondSchool), aktywność konta, tytuł (pin, tylko u Platyny), weryfikacja (wykonana / pominięta przez Administratora) |
-| Wniosek o aktywację | platynowy | Partner, data, decyzja Platyny |
+| Partner | platynowy | imię, nazwisko, e-mail, telefon (WhatsApp), numer Partnera, kraj numeru, rekomendujący, bezpośrednia Platyna (puste w `org_root`), rola, status (Nieaktywny, Aktywny, GoMagic, DiamondSchool), aktywność konta, profil uzupełniony (data), tytuł (pin, tylko u Platyny), weryfikacja (wykonana / pominięta przez Administratora) |
 | Historia ról | platynowy | Partner, rola, data, kto nadał |
 | Materiał | główny | typ, minimalna rola; wersje językowe: język, tytuł, plik |
 | Kontakt | główny | imię, dane kontaktowe, status (Kontakt, Klient, Partner), Partner zapraszający, ostatni Partner BOM, ostatni Partner POM dla każdego rozwiązania (np. MRA), numer Klienta Amway (u Klienta), weryfikacja (wykonana / pominięta przez Administratora), oświadczenie MRA złożone (znacznik, data, Partner) |
@@ -209,7 +217,9 @@ Przed wdrożeniem te ustalenia warto potwierdzić z prawnikiem.
 ## Otwarte pytania
 
 - [ ] Materiały dodane przez Administratora: widoczne w całej aplikacji (według minimalnej roli), czy tylko w jego dolnej linii?
-- [ ] Kto może wysyłać mailingi organizacyjne i marketingowe?
+- [ ] Zasięg adresatów mailingu marketingowego (Kontakty i Klienci są wspólni ponad strukturami): kogo może zapraszać Platyna, a kogo Administrator?
+- [ ] Weryfikacja e-maila potwierdzeniem linkiem przed wysyłką marketingową (zgody bez weryfikacji adresu są prawnie kruche); do potwierdzenia z prawnikiem.
+- [ ] Domena własna (Vercel, MailerSend: SPF/DKIM) i konfiguracja MailerSend; bez tego nie wyślemy żadnych e-maili.
 - [ ] Kanał weryfikacji telefonu (SMS lub WhatsApp): wybór przy budowie, według dostępności i ceny usług.
 - [ ] Z prawnikiem: znacznik oświadczenia MRA, anonimizacja przy żądaniu usunięcia danych, przechowywanie logu bez usuwania.
 
