@@ -16,11 +16,17 @@ export function errorField(error: unknown): string | null {
 export function useApiErrorText() {
   const t = useTranslations("errors");
   const tf = useTranslations("fields");
+  const tr = useTranslations("reasons");
   return (error: unknown): string => {
     if (!(error instanceof ApiError)) return t("UNKNOWN");
     const field = errorField(error);
     if (field && tf.has(field)) {
       return t("VALIDATION_FIELD", { field: tf(field) });
+    }
+    // A refusal by the permission engine says why.
+    const reason = error.details.reason;
+    if (error.code === "FORBIDDEN" && typeof reason === "string" && tr.has(reason)) {
+      return tr(reason);
     }
     return t.has(error.code) ? t(error.code) : t("UNKNOWN");
   };
