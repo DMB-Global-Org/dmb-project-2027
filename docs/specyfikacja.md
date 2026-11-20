@@ -1,6 +1,6 @@
 # dMb Projekt 2027 – specyfikacja wstępna
 
-Stan na 01.11.2026 (po opisie funkcjonalności z 30.10.2026) · Marek Kustosz. Skopiowano do repozytorium 19.11.2026; uzupełniono 19–20.11.2026 o decyzje 62–76.
+Stan na 01.11.2026 (po opisie funkcjonalności z 30.10.2026) · Marek Kustosz. Skopiowano do repozytorium 19.11.2026; uzupełniono 19–20.11.2026 o decyzje 62–81.
 
 Wersja robocza na żywo: https://claude.ai/code/artifact/79b03467-e381-4fce-92c2-a7f26ab27b24
 Tablica Event Storming: https://miro.com/app/board/uXjVHiUeyUM=/
@@ -60,7 +60,7 @@ Rola opisuje poziom dostępu do zasobów informacyjnych i edukacyjnych. Role są
 3. **Builder**
 4. **Silver**
 5. **Platinum**: w chwili promocji cała organizacja użytkownika zostaje oddzielona do osobnego obszaru i odseparowana od wglądu użytkowników w górnej linii sponsorowania. Daje praktycznie pełny dostęp do repozytorium.
-6. **Administrator**: rola nadawana użytkownikowi w dowolnym miejscu struktury. Daje uprawnienia do wszystkich kont poniżej niego, w całej dolnej linii rekomendacji. Dolna linia kończy się na granicy odpiętej organizacji platynowej, tak jak u zwykłego Partnera.
+6. **Administrator**: rola nadawana użytkownikowi w dowolnym miejscu struktury; nadaje ją tylko SuperAdministrator. Daje uprawnienia do wszystkich kont poniżej niego, w całej dolnej linii rekomendacji. Dolna linia kończy się na granicy odpiętej organizacji platynowej, tak jak u zwykłego Partnera.
 7. **SuperAdministrator**: konto tworzone z chwilą uruchomienia aplikacji, zakłada pierwsze konta użytkowników.
 
 Rola Gold została celowo usunięta, a nazwy Brąz Foundation i Brąz Builder zastąpiły Foundation i Builder.
@@ -115,7 +115,7 @@ Przed aktywacją konto Partnera uzupełnia się o dane ustalone wcześniej:
 - Konta powstają z linków rejestracyjnych, nie z ogólnodostępnego formularza. Formularz zawiera: adres e-mail, hasło (z potwierdzeniem), kraj (domyślnie PL) i numer Partnera właściciela konta. Pozostałe dane uzupełnia się przed aktywacją. Link można otwierać wielokrotnie, aby rozpocząć rejestrację, ale traci ważność z chwilą zapisania konta, a bez zapisu po 72 godzinach od wygenerowania. Na starcie nie ma importu istniejących struktur, więc konta powstają od góry.
 - Link niesie rekomendującego i organizację, więc formularz nie pyta o numer rekomendującego ani Platyny. Bezpośrednia Platyna wynika ze schematu organizacji i nie jest polem konta. Zapraszający może przy generowaniu linku wskazać siebie albo osobę ze swojej dolnej linii jako rekomendującego.
 - Pierwsze konta to Platyny. SuperAdministrator generuje link rodzaju „Platyna”; po wypełnieniu formularza aplikacja tworzy nowy schemat i zakłada w nim konto jako korzeń organizacji z rolą Platinum (promocja organizacji o pustej dolnej linii). Numer rekomendującego Platyny (osoby spoza organizacji, często spoza aplikacji) jest deklaracją uzupełnianą o powiązanie, gdy ta osoba pojawi się w aplikacji. Konto takiej Platyny nie jest aktywne od razu: przechodzi te same dwa etapy co każde konto.
-- Logowanie: e-mail i hasło (przy ustalaniu hasło trzeba potwierdzić), własne rozwiązanie w backendzie. Na start bez weryfikacji adresu e-mail. Powiadomienia i zaproszenia wysyła MailerSend.
+- Logowanie: e-mail i hasło (przy ustalaniu hasło trzeba potwierdzić), własne rozwiązanie w backendzie. Na start bez weryfikacji adresu e-mail. Powiadomienia i zaproszenia wysyła MailerSend. Resetu hasła e-mailem na 30.11 nie ma: uprawniona osoba wystawia nowy link ustawienia hasła.
 
 **Administrowanie kontem**
 
@@ -138,7 +138,7 @@ Przy manualnym założeniu konta właściciel dostaje powiadomienie z prośbą o
 **Zmiana rekomendującego, usunięcie ze struktury, dezaktywacja**
 
 - Zmiana rekomendującego: może ją wykonać każdy Partner wobec swojej dolnej linii, niezależnie od roli, pod warunkiem że jest przodkiem (lub sobą) zarówno przenoszonej osoby, jak i nowego rekomendującego. Dolna linia przenoszonej osoby idzie razem z nią. Operacja działa tylko w obrębie jednej organizacji; nowy rekomendujący nie może być przenoszoną osobą ani należeć do jej dolnej linii. Korzeni organizacji (Platyn) w ten sposób nie przenosimy. Konto zachowuje stałe pole „kto zaprosił”, a poprzedni rekomendujący zostaje w logu. Powiadomienie dostają przeniesiona osoba i nowy rekomendujący.
-- Usunięcie ze struktury: osoby przez nią zarekomendowane przechodzą do jej rekomendującego. Konto jest oznaczone jako usunięte ze struktury (data, kto, rekomendujący w chwili usunięcia), dezaktywowane, i znika z drzewa oraz list; wiersz zostaje, a numer Partnera pozostaje zarezerwowany. To nie jest usunięcie danych osoby (anonimizacja to osobna operacja). Nie można usunąć siebie ani korzenia organizacji.
+- Usunięcie ze struktury: osoby przez nią zarekomendowane przechodzą do jej rekomendującego. Konto jest oznaczone jako usunięte ze struktury (data, kto, rekomendujący w chwili usunięcia), dezaktywowane, i znika z drzewa oraz list; wiersz zostaje, a numer Partnera pozostaje zarezerwowany. To nie jest usunięcie danych osoby (anonimizacja to osobna operacja). Nie można usunąć siebie ani korzenia organizacji. Usuwać mogą Platyna w swojej organizacji, Administrator w swojej dolnej linii i SuperAdministrator; przywracanie usuniętych nie wchodzi do wersji 1.
 - Dezaktywacja konta: dezaktywować i ponownie aktywować mogą Platyna we własnej organizacji, Administrator i SuperAdministrator. Dezaktywowane konto nie może się zalogować (sesje po stronie serwera, więc odcięcie jest natychmiastowe), zostaje w drzewie z rolą, statusem i danymi, a jego dolna linia się nie zmienia. Wypada z mailingu organizacyjnego, a jego nieużyte linki rejestracyjne tracą ważność. Ponowna aktywacja nie wymaga rejestracji; rola i status zostają. Dezaktywowana Platyna: organizacja działa dalej, zarządzają nią Administrator i SuperAdministrator; Platyna wyżej w linii może zmieniać jej rolę i status, ale nie dezaktywować jej organizacji.
 
 ## Obszar 3: Kontakty
@@ -187,7 +187,7 @@ Zebrane dane kontaktowe służą dwóm rodzajom wysyłek.
 | Mailing organizacyjny | Partnerzy, z uwzględnieniem ról | komunikacja w ramach organizacji |
 | Mailing marketingowy | Klienci i Kontakty | zebrane zgody marketingowe, osobno dla każdego kanału |
 
-Mailing marketingowy realizuje trzeci nadrzędny cel aplikacji, czyli e-marketing.
+Mailing marketingowy realizuje trzeci nadrzędny cel aplikacji, czyli e-marketing. Na termin 30.11 wchodzi mailing organizacyjny i wspólny fundament wysyłek (kolejka powiadomień i adapter poczty); mailing marketingowy (Kontakty, Zgody, wysyłka) jest przesunięty na kolejny etap.
 
 Wysyłki obsługuje MailerSend. Mailingi wysyłają: Platyna do swojej organizacji oraz Administrator i SuperAdministrator do swojego zasięgu. Dezaktywowane konta nie dostają mailingu organizacyjnego.
 
@@ -229,9 +229,7 @@ Przed wdrożeniem te ustalenia warto potwierdzić z prawnikiem.
 - [ ] Zasięg adresatów mailingu marketingowego (Kontakty i Klienci są wspólni ponad strukturami): kogo może zapraszać Platyna, a kogo Administrator?
 - [ ] Weryfikacja e-maila potwierdzeniem linkiem przed wysyłką marketingową (zgody bez weryfikacji adresu są prawnie kruche); do potwierdzenia z prawnikiem.
 - [ ] Domena własna (Vercel, MailerSend: SPF/DKIM) i konfiguracja MailerSend; bez tego nie wyślemy żadnych e-maili.
-- [ ] Czy numer rekomendującego Platyny ma własne pole kraju (domyślnie kraj właściciela konta)?
-- [ ] Kto może usuwać osoby ze struktury (rekomendacja: Platyna w swojej organizacji, Administrator w dolnej linii, SuperAdministrator) i czy przywracanie usuniętych ma być w wersji 1 (rekomendacja: później)?
-- [ ] Kto aktywuje i dezaktywuje samą Platynę: jest korzeniem własnej organizacji, więc raczej nie może zrobić tego sobie; specyfikacja nie rozstrzyga (rekomendacja: SuperAdministrator lub Administrator w górnej linii).
+- [ ] Czy numer rekomendującego Platyny ma własne pole kraju (domyślnie kraj właściciela konta)?- [ ] Kto aktywuje i dezaktywuje samą Platynę: jest korzeniem własnej organizacji, więc raczej nie może zrobić tego sobie; specyfikacja nie rozstrzyga (rekomendacja: SuperAdministrator lub Administrator w górnej linii).
 - [ ] Kanał weryfikacji telefonu (SMS lub WhatsApp): wybór przy budowie, według dostępności i ceny usług.
 - [ ] Z prawnikiem: znacznik oświadczenia MRA, anonimizacja przy żądaniu usunięcia danych, przechowywanie logu bez usuwania.
 

@@ -1,14 +1,14 @@
 import { Global, Inject, Module, OnApplicationShutdown } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { drizzle, PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import type { Env } from '../config/env.js';
+import { DB, PG_CLIENT, type Database } from './database.tokens.js';
 import * as schema from './schema/index.js';
+import { TxRunner } from './tx-runner.js';
 
-export const DB = Symbol('DB');
-const PG_CLIENT = Symbol('PG_CLIENT');
-
-export type Database = PostgresJsDatabase<typeof schema>;
+// Re-exported so existing imports of the token and type keep working.
+export { DB, type Database };
 
 @Global()
 @Module({
@@ -28,8 +28,9 @@ export type Database = PostgresJsDatabase<typeof schema>;
       useFactory: (client: postgres.Sql): Database =>
         drizzle(client, { schema }),
     },
+    TxRunner,
   ],
-  exports: [DB],
+  exports: [DB, TxRunner],
 })
 export class DatabaseModule implements OnApplicationShutdown {
   constructor(@Inject(PG_CLIENT) private readonly client: postgres.Sql) {}

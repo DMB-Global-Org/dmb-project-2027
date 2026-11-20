@@ -9,7 +9,7 @@ Właściciel produktu: Marek Kustosz. Rozmawiamy po polsku.
 ## Gdzie są wymagania
 
 - `docs/specyfikacja.md`: obowiązująca specyfikacja (role, uprawnienia, konta, Kontakty, mailing, model danych, RODO). Czytaj ją przed każdą większą zmianą.
-- `docs/ustalenia-i-kontekst.md`: dziennik decyzji 1–77 (które są zastąpione i dlaczego).
+- `docs/ustalenia-i-kontekst.md`: dziennik decyzji 1–81 (które są zastąpione i dlaczego).
 - `docs/funkcjonalnosci-2026-10-30.md`: zakres na termin **30.11.2026** (wersja DE obok).
 - Nie zgaduj reguł biznesowych. Gdy specyfikacja milczy albo jest niejasna, zapytaj i zaproponuj dopisanie decyzji do `docs/`.
 
@@ -28,6 +28,7 @@ Monorepo pnpm + Turborepo (`pnpm-workspace.yaml`: `frontend`, `backend`), Node >
 - `pnpm dev`, `pnpm build`, `pnpm lint`, `pnpm test`
 - `pnpm db:generate` (nowa migracja z `backend/src/db/schema`), `pnpm db:migrate`, `pnpm db:check`, `pnpm db:studio`
 - Backend osobno: `pnpm --filter backend test`, `pnpm --filter backend test:e2e`
+- Testy integracyjne (prawdziwy Postgres): `docker compose up -d --wait`, potem `pnpm test:int`. Baza `dmb_test` na porcie 5434 (`DATABASE_URL_TEST`); nazwa bazy musi kończyć się na `_test`, bo testy kasują schematy. Pliki `*.int-spec.ts`.
 - Zmienne: `backend/.env` (`DATABASE_URL` = pooler 6543, `DATABASE_DIRECT_URL` = 5432 dla migracji), `frontend/.env.local` (`NEXT_PUBLIC_API_URL`). Nie commituj plików `.env`.
 
 ## Słownik: pojęcia domenowe i nazwy w kodzie

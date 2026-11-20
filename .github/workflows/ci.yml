@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: dmb_test
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d dmb_test"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 15
+    env:
+      DATABASE_URL_TEST: postgres://postgres:postgres@localhost:5434/dmb_test
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v6 # version taken from "packageManager"
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile --filter backend...
+
+      - run: pnpm --filter backend lint
+      - run: pnpm --filter backend build
+      - run: pnpm --filter backend test
+      - run: pnpm --filter backend test:int
+      - name: End-to-end tests
+        run: pnpm --filter backend test:e2e
+        env:
+          # The app only connects lazily; the test database is enough here.
+          DATABASE_URL: postgres://postgres:postgres@localhost:5434/dmb_test
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile --filter frontend...
+
+      - run: pnpm --filter frontend lint
+      - run: pnpm --filter frontend build

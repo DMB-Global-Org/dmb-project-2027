@@ -20,6 +20,10 @@
     },
     "lint": {},
     "test": {},
+    "test:int": {
+      "cache": false,
+      "passThroughEnv": ["DATABASE_URL_TEST"]
+    },
     "db:generate": {
       "cache": false,
       "passThroughEnv": ["DATABASE_DIRECT_URL"]
