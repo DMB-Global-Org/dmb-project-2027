@@ -263,7 +263,21 @@ export class InvitationsService {
         ),
       );
     if (!row) return null;
-    return (await this.inviterMayInvite(row.inviterAccountId)) ? row : null;
+    if (!(await this.inviterMayInvite(row.inviterAccountId))) return null;
+    return (await this.recommenderRemoved(row)) ? null : row;
+  }
+
+  /** The sponsor named in a link was taken out of the structure since (decision 86). */
+  async recommenderRemoved(
+    row: Pick<InvitationRow, 'recommenderAccountId' | 'orgSchema'>,
+  ): Promise<boolean> {
+    if (!row.recommenderAccountId || !row.orgSchema) return false;
+    const { partners } = orgTables(row.orgSchema);
+    const [partner] = await this.db
+      .select({ removedAt: partners.removedAt })
+      .from(partners)
+      .where(eq(partners.accountId, row.recommenderAccountId));
+    return partner?.removedAt != null;
   }
 
   async inviterMayInvite(inviterAccountId: string): Promise<boolean> {

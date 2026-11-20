@@ -15,6 +15,13 @@
       "when": 1795193431867,
       "tag": "0001_partners_consents",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795196054584,
+      "tag": "0002_partners_removed",
+      "breakpoints": true
     }
   ]
 }

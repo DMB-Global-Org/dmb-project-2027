@@ -61,6 +61,14 @@ export function defineOrgTables(schemaName: string) {
       ),
       // Who invited the person; never changes, unlike the sponsor.
       invitedById: uuid('invited_by_id').references(() => accounts.id),
+      // Removal from the structure (decision 72): the row stays, but the account
+      // leaves the tree and the lists. `removedRecommenderId` is the sponsor at
+      // the moment of removal; `recommenderId` is cleared.
+      removedAt: timestamp('removed_at', { withTimezone: true }),
+      removedBy: uuid('removed_by').references(() => accounts.id),
+      removedRecommenderId: uuid('removed_recommender_id').references(
+        () => accounts.id,
+      ),
       createdAt: timestamp('created_at', { withTimezone: true })
         .notNull()
         .defaultNow(),

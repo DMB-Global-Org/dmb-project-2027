@@ -591,6 +591,28 @@ describe('change of sponsor (decision 71)', () => {
     ).toBe(true);
   });
 
+  it.each(['PENDING_ACTIVATION', 'DEACTIVATED'] as const)(
+    'refuses a new sponsor in state %s (decision 86)',
+    (state) => {
+      for (const role of [...LOW_ROLES, 'PLATINUM', 'ADMINISTRATOR'] as const) {
+        expect(
+          reasonOf(
+            move(actorOf(role), downlineTarget(), newRecommender({ state })),
+          ),
+        ).toBe('recommender_not_active');
+      }
+      expect(
+        reasonOf(
+          move(
+            actorOf('SUPER_ADMINISTRATOR'),
+            outsideTarget(),
+            newRecommender({ state }),
+          ),
+        ),
+      ).toBe('recommender_not_active');
+    },
+  );
+
   it('refuses a cycle: the new sponsor is the person or in their downline', () => {
     expect(
       reasonOf(

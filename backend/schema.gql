@@ -5,9 +5,11 @@
 enum AccountAction {
   ACTIVATE
   CHANGE_PARTNER_NUMBER
+  CHANGE_RECOMMENDER
   CHANGE_ROLE
   CHANGE_STATUS
   DEACTIVATE
+  REMOVE_FROM_STRUCTURE
   UPDATE_ACCOUNT
 }
 
@@ -25,6 +27,7 @@ type AccountNode {
   phone: String
   profileCompleted: Boolean!
   recommenderId: ID
+  removed: Boolean!
   role: Role!
   state: AccountState!
   status: PartnerStatus!
@@ -87,6 +90,7 @@ enum InvitationStatus {
 
 type Mutation {
   activateAccount(id: ID!): AccountNode!
+  changeAccountRecommender(id: ID!, recommenderId: ID!): AccountNode!
   changeAccountRole(id: ID!, role: Role!): AccountNode!
   changeAccountStatus(id: ID!, status: PartnerStatus!): AccountNode!
   createInvitation(input: CreateInvitationInput!): CreatedInvitation!
@@ -94,6 +98,7 @@ type Mutation {
   login(email: String!, password: String!): Viewer!
   logout: Boolean!
   register(input: RegisterInput!): Viewer!
+  removeAccountFromStructure(id: ID!): Boolean!
   revokeInvitation(id: ID!): Invitation!
   updateAccountData(id: ID!, input: UpdateAccountDataInput!): AccountNode!
   updateMyProfile(input: UpdateProfileInput!): MyProfile!
@@ -131,8 +136,17 @@ type Query {
   invitation(token: String!): InvitationPreview
   myInvitations: [Invitation!]!
   myProfile: MyProfile
+  recommenderCandidates(id: ID!): [RecommenderCandidate!]!
   structure: [StructureEntry!]!
   viewer: Viewer
+}
+
+type RecommenderCandidate {
+  depth: Int!
+  email: String!
+  firstName: String
+  id: ID!
+  lastName: String
 }
 
 input RegisterInput {

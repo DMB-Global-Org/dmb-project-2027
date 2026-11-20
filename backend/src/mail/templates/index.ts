@@ -6,6 +6,10 @@ import {
 import type { MailMessage } from '../mail.types.js';
 import { type InvitationMailPayload, renderInvitation } from './invitation.js';
 import {
+  type RecommenderChangedMailPayload,
+  renderRecommenderChanged,
+} from './recommender-changed.js';
+import {
   type ProfileCompletedMailPayload,
   renderProfileCompleted,
 } from './profile-completed.js';
@@ -14,6 +18,7 @@ import {
 export interface NotificationPayloads {
   invitation: InvitationMailPayload;
   profileCompleted: ProfileCompletedMailPayload;
+  recommenderChanged: RecommenderChangedMailPayload;
 }
 export type NotificationType = keyof NotificationPayloads;
 
@@ -25,6 +30,7 @@ const RENDERERS: {
 } = {
   invitation: renderInvitation,
   profileCompleted: renderProfileCompleted,
+  recommenderChanged: renderRecommenderChanged,
 };
 
 /** An unknown or unsupported language falls back to Polish (rule 10). */

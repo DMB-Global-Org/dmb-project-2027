@@ -1,6 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { eq, sql } from 'drizzle-orm';
-import type { InviteRecommenderFacts, TargetFacts } from '../authz/types.js';
+import type {
+  InviteRecommenderFacts,
+  NewRecommenderFacts,
+  TargetFacts,
+} from '../authz/types.js';
 import type { AuthContext } from '../auth/auth.types.js';
 import { DB, type Database } from '../db/database.tokens.js';
 import { assertOrgSchemaName, orgTables } from '../db/org/org-tables.js';
@@ -78,7 +82,7 @@ export class RelationLoader {
 
     const { partners } = orgTables(account.orgSchema);
     const [partner] = await executor
-      .select({ state: partners.state })
+      .select({ state: partners.state, removedAt: partners.removedAt })
       .from(partners)
       .where(eq(partners.accountId, recommenderId));
     if (!partner) return null;
@@ -97,8 +101,7 @@ export class RelationLoader {
       facts: {
         actorIsAncestorOrSelf,
         state: partner.state,
-        // Removal from the structure arrives with PR8 (decision 72).
-        removed: false,
+        removed: partner.removedAt !== null,
       },
     };
   }
@@ -153,8 +156,7 @@ export class RelationLoader {
       facts: {
         role: partner.role,
         state: partner.state,
-        // Removal from the structure arrives with PR8 (decision 72).
-        removed: false,
+        removed: partner.removedAt !== null,
         isSelf,
         sameOrg,
         actorIsAncestor,
@@ -167,7 +169,7 @@ export class RelationLoader {
   }
 
   /**
-   * `rootId` and everybody below it in the sponsor tree of `orgSchema`, parents
+   * `rootId` and everybody below it (removed accounts are left out) in the sponsor tree of `orgSchema`, parents
    * before children, siblings by registration time. A visited-ids guard keeps
    * a corrupted, cyclic chain from looping forever.
    */
@@ -182,12 +184,12 @@ export class RelationLoader {
       sql`
       with recursive tree(account_id, depth, ids, path) as (
         select account_id, 0, array[account_id], array[created_at]
-          from ${partners} where account_id = ${rootId}
+          from ${partners} where account_id = ${rootId} and removed_at is null
         union all
         select p.account_id, t.depth + 1, t.ids || p.account_id, t.path || p.created_at
           from ${partners} p
           join tree t on p.recommender_id = t.account_id
-          where p.account_id <> all(t.ids)
+          where p.account_id <> all(t.ids) and p.removed_at is null
       )
       select account_id, depth from tree order by path, account_id
     `,
@@ -196,5 +198,69 @@ export class RelationLoader {
       accountId: row.account_id,
       depth: Number(row.depth),
     }));
+  }
+
+  /**
+   * Facts about the sponsor a person would be moved under, relative to the
+   * actor and to the person. Null when the account is unknown, a
+   * SuperAdministrator or has no Partner row.
+   */
+  async newRecommenderFacts(
+    actor: AuthContext,
+    target: LoadedTarget,
+    newRecommenderId: string,
+    executor: Database | Tx = this.db,
+  ): Promise<NewRecommenderFacts | null> {
+    const [account] = await executor
+      .select({ orgSchema: accounts.orgSchema })
+      .from(accounts)
+      .where(eq(accounts.id, newRecommenderId));
+    if (!account?.orgSchema) return null;
+
+    const { partners } = orgTables(account.orgSchema);
+    const [partner] = await executor
+      .select({ state: partners.state, removedAt: partners.removedAt })
+      .from(partners)
+      .where(eq(partners.accountId, newRecommenderId));
+    if (!partner) return null;
+
+    const sameOrgAsTarget = account.orgSchema === target.orgSchema;
+    const actorIsAncestorOrSelf =
+      actor.orgSchema === account.orgSchema &&
+      (await this.isSelfOrAncestor(
+        account.orgSchema,
+        actor.accountId,
+        newRecommenderId,
+        executor,
+      ));
+    // Only meaningful inside the organization of the person being moved.
+    const isTargetOrInTargetSubtree =
+      sameOrgAsTarget &&
+      (await this.isSelfOrAncestor(
+        target.orgSchema,
+        target.partner.accountId,
+        newRecommenderId,
+        executor,
+      ));
+
+    return {
+      actorIsAncestorOrSelf,
+      state: partner.state,
+      removed: partner.removedAt !== null,
+      sameOrgAsTarget,
+      isTargetOrInTargetSubtree,
+    };
+  }
+
+  /**
+   * Serializes the changes of one organization's tree (moves and removals):
+   * the lock is held until the transaction ends, so two concurrent moves cannot
+   * each look fine on their own and still close a cycle together.
+   */
+  async lockOrg(executor: Tx, orgSchema: string): Promise<void> {
+    assertOrgSchemaName(orgSchema);
+    await executor.execute(
+      sql`select pg_advisory_xact_lock(hashtextextended(${orgSchema}, 0))`,
+    );
   }
 }
