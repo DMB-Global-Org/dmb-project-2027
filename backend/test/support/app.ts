@@ -5,6 +5,7 @@ import {
   type MailTransport,
 } from '../../src/mail/mail.types.js';
 import request from 'supertest';
+import { OutboxDispatcher } from '../../src/mail/outbox-dispatcher.js';
 import { testDatabaseUrl } from './config.js';
 
 /** The whole application against the test database. */
@@ -44,3 +45,20 @@ export async function gql(
 
 /** `extensions` of the first error, e.g. `{ code: 'FORBIDDEN', reason: ... }`. */
 export const errorOf = (body: GqlBody) => body.errors?.[0]?.extensions;
+
+/**
+ * Runs the outbox until `delivered()` is true. One run takes only a batch of
+ * rows, and the shared test database keeps the rows other test files left
+ * behind, so a single run may not reach the message a test is waiting for.
+ */
+export async function dispatchUntil(
+  app: INestApplication,
+  delivered: () => boolean,
+  maxRuns = 50,
+): Promise<void> {
+  const dispatcher = app.get(OutboxDispatcher);
+  for (let run = 0; run < maxRuns && !delivered(); run++) {
+    // A second ahead: row timestamps come from the database clock.
+    await dispatcher.runOnce(new Date(Date.now() + 1000));
+  }
+}

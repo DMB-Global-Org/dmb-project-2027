@@ -4,6 +4,7 @@ import { Module } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
+import { AccountsModule } from './accounts/accounts.module.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { AuthModule } from './auth/auth.module.js';
@@ -27,6 +28,7 @@ import { InvitationsModule } from './invitations/invitations.module.js';
     DatabaseModule,
     AuthModule,
     InvitationsModule,
+    AccountsModule,
     HealthModule,
   ],
   controllers: [AppController],

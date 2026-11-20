@@ -10,12 +10,13 @@ import { appError } from '../common/graphql-error.js';
 import type { Locale } from '../common/locales.js';
 import type { Env } from '../config/env.js';
 import { DB, type Database } from '../db/database.tokens.js';
+import { orgTables } from '../db/org/org-tables.js';
 import {
   invitations,
   type InvitationKind,
   type InvitationRow,
 } from '../db/schema/index.js';
-import { TxRunner } from '../db/tx-runner.js';
+import { TxRunner, type Tx } from '../db/tx-runner.js';
 import { OutboxService } from '../mail/outbox.service.js';
 import { RelationLoader } from '../structure/relation-loader.js';
 import {
@@ -156,11 +157,75 @@ export class InvitationsService {
             url,
             kind: input.kind,
             expiresAt: invitation!.expiresAt.toISOString(),
+            inviterName: await this.inviterName(auth, tx),
           },
         });
       }
       return { invitation: invitation!, token, url };
     });
+  }
+
+  /**
+   * Revokes a link that can still be used: it expires on the spot, so it is
+   * shown as EXPIRED afterwards. Used and expired links stay as they are.
+   */
+  async revoke(
+    auth: AuthContext,
+    invitationId: string,
+    meta: RequestMeta,
+    now = new Date(),
+  ): Promise<InvitationRow> {
+    return this.tx.run(async (tx) => {
+      const [row] = await tx
+        .select()
+        .from(invitations)
+        .where(eq(invitations.id, invitationId))
+        .for('update');
+      if (!row) throw appError('NOT_FOUND');
+      assertAllowed(
+        can(auth.actor, {
+          action: 'REVOKE_INVITATION',
+          isInviter: row.inviterAccountId === auth.accountId,
+        }),
+      );
+      if (row.consumedAt || row.expiresAt.getTime() <= now.getTime()) {
+        throw appError('INVITATION_INVALID');
+      }
+
+      const [revoked] = await tx
+        .update(invitations)
+        .set({ expiresAt: now })
+        .where(eq(invitations.id, row.id))
+        .returning();
+      await this.audit.record(tx, {
+        actorAccountId: auth.accountId,
+        action: 'invitation.revoke',
+        objectType: 'invitation',
+        objectId: row.id,
+        subjectAccountId: row.recommenderAccountId,
+        before: { expiresAt: row.expiresAt },
+        after: { expiresAt: now },
+        meta,
+      });
+      return revoked!;
+    });
+  }
+
+  /** The inviter's name for the e-mail; undefined when they have not given one. */
+  private async inviterName(
+    auth: AuthContext,
+    executor: Tx,
+  ): Promise<string | undefined> {
+    if (!auth.orgSchema) return undefined;
+    const { partners } = orgTables(auth.orgSchema);
+    const [partner] = await executor
+      .select({ firstName: partners.firstName, lastName: partners.lastName })
+      .from(partners)
+      .where(eq(partners.accountId, auth.accountId));
+    const name = [partner?.firstName, partner?.lastName]
+      .filter(Boolean)
+      .join(' ');
+    return name || undefined;
   }
 
   /** The address of the registration page for a token. */

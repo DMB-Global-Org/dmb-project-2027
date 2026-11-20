@@ -61,6 +61,18 @@ export function can(actor: Actor, request: Request): Decision {
         : deny('insufficient_role');
     case 'VIEW_AUDIT':
       return canViewAudit(actor, request.target);
+    case 'VIEW_STRUCTURE':
+      // Everybody who may operate sees the structure below them; what is
+      // visible is decided by the query (downline), not by the role.
+      return ALLOW;
+    case 'UPDATE_ACCOUNT':
+      return canUpdateAccount(actor, request.target);
+    case 'CHANGE_PARTNER_NUMBER':
+      return canChangePartnerNumber(actor, request.target);
+    case 'REVOKE_INVITATION':
+      return request.isInviter || isSuperAdmin(actor)
+        ? ALLOW
+        : deny('not_in_scope');
   }
 }
 
@@ -130,6 +142,27 @@ function canSetActivation(
       ? target.state !== 'ACTIVE'
       : target.state !== 'DEACTIVATED';
   return validState ? ALLOW : deny('invalid_state');
+}
+
+/** Name and phone of somebody else's account (decision 85). */
+function canUpdateAccount(actor: Actor, target: TargetFacts): Decision {
+  const common = commonTargetChecks(target);
+  if (common) return common;
+  if (target.isOrgRoot) {
+    // Like activation: the root is managed from above the organization.
+    const allowed =
+      isSuperAdmin(actor) ||
+      (actor.role === 'ADMINISTRATOR' && target.actorIsAboveOrg);
+    return allowed ? ALLOW : scopeDenial(actor);
+  }
+  return inAdminScope(actor, target) ? ALLOW : scopeDenial(actor);
+}
+
+/** The Partner number is unique and stays reserved: only a SuperAdministrator edits it. */
+function canChangePartnerNumber(actor: Actor, target: TargetFacts): Decision {
+  const common = commonTargetChecks(target);
+  if (common) return common;
+  return isSuperAdmin(actor) ? ALLOW : deny('insufficient_role');
 }
 
 function canChangeStatus(actor: Actor, target: TargetFacts): Decision {

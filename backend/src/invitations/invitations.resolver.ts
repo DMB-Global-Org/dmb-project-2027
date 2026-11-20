@@ -1,8 +1,9 @@
-import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Args, Context, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { Public } from '../auth/public.decorator.js';
 import type { AuthContext, GqlContext } from '../auth/auth.types.js';
 import { requestMeta } from '../auth/cookies.js';
 import { RequireAuth } from '../auth/current-actor.decorator.js';
+import { parseId } from '../common/field-schemas.js';
 import { appError } from '../common/graphql-error.js';
 import {
   CreatedInvitation,
@@ -39,6 +40,21 @@ export class InvitationsResolver {
       requestMeta(ctx.req),
     );
     return { invitation: Invitation.from(invitation), url };
+  }
+
+  /** Revokes a link that is still usable (its author or a SuperAdministrator). */
+  @Mutation(() => Invitation)
+  async revokeInvitation(
+    @Args('id', { type: () => ID }) id: string,
+    @RequireAuth() auth: AuthContext,
+    @Context() ctx: GqlContext,
+  ): Promise<Invitation> {
+    const row = await this.invitations.revoke(
+      auth,
+      parseId(id),
+      requestMeta(ctx.req),
+    );
+    return Invitation.from(row);
   }
 
   /** The links the logged-in account created. */

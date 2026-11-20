@@ -58,3 +58,51 @@ describe('invitation e-mail', () => {
     expect(mail.html).toContain('&amp;b=&quot;2&quot;&lt;script&gt;');
   });
 });
+
+describe('invitation e-mail: inviter name', () => {
+  it('names the inviter when known and says nothing otherwise', () => {
+    const named = renderMail(
+      'invitation',
+      { ...PAYLOAD, inviterName: 'Jan <Kowalski>' },
+      'pl',
+      'a@b.pl',
+    );
+    expect(named.text).toContain('Zaprasza Cię: Jan <Kowalski>.');
+    expect(named.html).toContain('Jan &lt;Kowalski&gt;');
+    expect(
+      renderMail('invitation', PAYLOAD, 'pl', 'a@b.pl').text,
+    ).not.toContain('Zaprasza Cię');
+  });
+});
+
+describe('profile completed e-mail', () => {
+  const payload = {
+    accountName: 'Anna Nowak',
+    url: 'https://app.example.com/accounts/123',
+  };
+
+  it.each([
+    ['pl', 'Profil uzupełniony: Anna Nowak', 'Przejdź do konta'],
+    ['de', 'Profil vervollständigt: Anna Nowak', 'Zum Konto'],
+    ['en', 'Profile completed: Anna Nowak', 'Open the account'],
+  ])('is written in %s', (locale, subject, action) => {
+    const mail = renderMail('profileCompleted', payload, locale, 'p@b.pl');
+
+    expect(mail.to).toBe('p@b.pl');
+    expect(mail.subject).toBe(subject);
+    expect(mail.text).toContain(`${action}: ${payload.url}`);
+    expect(mail.html).toContain(`href="${payload.url}"`);
+  });
+
+  it('falls back to Polish and escapes the name in the HTML part', () => {
+    const mail = renderMail(
+      'profileCompleted',
+      { ...payload, accountName: '<b>Anna</b>' },
+      'fr',
+      'p@b.pl',
+    );
+    expect(mail.subject).toContain('Profil uzupełniony');
+    expect(mail.html).not.toContain('<b>Anna</b>');
+    expect(mail.html).toContain('&lt;b&gt;Anna&lt;/b&gt;');
+  });
+});

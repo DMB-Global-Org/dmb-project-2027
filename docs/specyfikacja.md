@@ -119,7 +119,10 @@ Przed aktywacją konto Partnera uzupełnia się o dane ustalone wcześniej:
 
 **Administrowanie kontem**
 
-- Zmiana i uzupełnianie danych konta.
+- Zmiana i uzupełnianie danych konta: własne dane zawsze właściciel (także przed aktywacją). Imię, nazwisko i telefon cudzego konta poprawia Platyna we własnej organizacji, Administrator w dolnej linii albo SuperAdministrator; numer Partnera i kraj tylko SuperAdministrator (decyzja 85).
+- Zgody na 30.11: jedna akceptacja regulaminu i zgód zapisana ze znacznikiem czasu; treści i wersje zgód dojdą z modułem Zgód. Profil jest uzupełniony, gdy są imię, nazwisko, telefon i zgody; wiadomość o tym dostaje Platyna organizacji (gdy to sama Platyna albo jest nieaktywna, SuperAdministratorzy).
+- Każdy aktywny Partner widzi siebie i swoją dolną linię; SuperAdministrator widzi wszystkie organizacje.
+- Zaproszenie unieważnia jego autor albo SuperAdministrator.
 - Aktywowanie i dezaktywowanie konta, zmiana roli, zmiana statusu i promowanie do Platinum: tylko Platyna we własnej organizacji, Administrator i SuperAdministrator.
 - Nowe konto dostaje rolę Ogólne; dostęp do materiałów tej roli i możliwości operacyjne włącza dopiero aktywacja.
 
