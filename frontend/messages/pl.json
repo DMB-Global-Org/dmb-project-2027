@@ -14,7 +14,8 @@
   "nav": {
     "accounts": "Struktura",
     "invitations": "Zaproszenia",
-    "profile": "Mój profil"
+    "profile": "Mój profil",
+    "mailing": "Mailing"
   },
   "roles": {
     "GENERAL": "Ogólne",
@@ -55,7 +56,10 @@
     "recipientEmail": "E-mail adresata",
     "recipientPhone": "Telefon adresata",
     "locale": "Język zaproszenia",
-    "token": "Link"
+    "token": "Link",
+    "subject": "Temat",
+    "body": "Treść",
+    "recipients": "Adresaci"
   },
   "login": {
     "title": "Logowanie",
@@ -135,7 +139,8 @@
     "VALIDATION_FIELD": "Sprawdź pole: {field}.",
     "NETWORK": "Brak połączenia z serwerem. Spróbuj ponownie.",
     "UNKNOWN": "Coś poszło nie tak. Spróbuj ponownie.",
-    "retry": "Spróbuj ponownie"
+    "retry": "Spróbuj ponownie",
+    "NO_RECIPIENTS": "Brak adresatów: wiadomość nikogo by nie dotarła."
   },
   "account": {
     "back": "Struktura",
@@ -192,5 +197,28 @@
     "cycle": "Nowy rekomendujący nie może być tą osobą ani należeć do jej dolnej linii.",
     "recommender_not_active": "Rekomendujący musi mieć aktywne konto.",
     "recommender_removed": "Ten rekomendujący został usunięty ze struktury."
+  },
+  "mailing": {
+    "title": "Mailing organizacyjny",
+    "new": "Nowa wiadomość",
+    "newHint": "Wiadomość dostaną aktywni Partnerzy z Twojego zasięgu, z wybraną rolą i wyższymi. Nie dostaną jej osoby oczekujące na aktywację ani dezaktywowane.",
+    "minRole": "Najniższa rola adresatów",
+    "minRoleHint": "Wiadomość dostają osoby z tą rolą i wyższymi.",
+    "audience": "Dotrze do {count, plural, one {# osoby} other {# osób}}.",
+    "translations": "Wersje w innych językach (opcjonalnie)",
+    "translationsHint": "Osoba bez wersji w swoim języku dostanie wersję polską.",
+    "review": "Dalej",
+    "confirmTitle": "Wysłać wiadomość?",
+    "confirmText": "Wiadomość trafi do {count, plural, one {# osoby} other {# osób}} (rola {role} i wyższe). Tej operacji nie można cofnąć.",
+    "send": "Wyślij",
+    "cancel": "Anuluj",
+    "queued": "Wiadomość zakolejkowana do wysłania.",
+    "date": "Data",
+    "subjectColumn": "Temat",
+    "fromRole": "Od roli",
+    "recipients": "Adresaci",
+    "delivery": "Dostarczanie",
+    "deliveryLine": "wysłane {sent}, w kolejce {pending}, błędy {failed}",
+    "empty": "Brak wysłanych wiadomości."
   }
 }

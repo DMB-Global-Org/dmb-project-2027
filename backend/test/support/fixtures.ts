@@ -65,6 +65,7 @@ export async function createPartner(
     phone?: string;
     /** Digits; stored with country PL. */
     partnerNumber?: string;
+    locale?: string;
   } = {},
 ): Promise<PartnerFixture> {
   const email = options.email ?? uniqueEmail();
@@ -74,6 +75,7 @@ export async function createPartner(
     .values({
       email,
       orgSchema,
+      locale: options.locale,
       passwordHash: await hashPassword(password, CHEAP_SCRYPT),
       ...(options.partnerNumber
         ? { partnerNumber: options.partnerNumber, partnerCountry: 'PL' }

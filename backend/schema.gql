@@ -92,6 +92,17 @@ enum InvitationStatus {
   USED
 }
 
+type Mailing {
+  createdAt: DateTime!
+  failed: Int!
+  id: ID!
+  minRole: Role!
+  pending: Int!
+  recipientCount: Int!
+  sent: Int!
+  subject: String!
+}
+
 type Mutation {
   activateAccount(id: ID!): AccountNode!
   changeAccountRecommender(id: ID!, recommenderId: ID!): AccountNode!
@@ -105,6 +116,7 @@ type Mutation {
   register(input: RegisterInput!): Viewer!
   removeAccountFromStructure(id: ID!): Boolean!
   revokeInvitation(id: ID!): Invitation!
+  sendOrgMailing(input: SendOrgMailingInput!): Mailing!
   updateAccountData(id: ID!, input: UpdateAccountDataInput!): AccountNode!
   updateMyProfile(input: UpdateProfileInput!): MyProfile!
   updatePartnerNumber(id: ID!, input: PartnerNumberInput!): AccountNode!
@@ -139,7 +151,9 @@ type Query {
   account(id: ID!): AccountNode
   health: String!
   invitation(token: String!): InvitationPreview
+  mailingAudience(minRole: Role): Int!
   myInvitations: [Invitation!]!
+  myMailings: [Mailing!]!
   myProfile: MyProfile
   recommenderCandidates(id: ID!): [RecommenderCandidate!]!
   structure: [StructureEntry!]!
@@ -171,6 +185,16 @@ enum Role {
   PLATINUM
   SILVER
   SUPER_ADMINISTRATOR
+}
+
+input SendOrgMailingInput {
+  body: String!
+  bodyDe: String
+  bodyEn: String
+  minRole: Role
+  subject: String!
+  subjectDe: String
+  subjectEn: String
 }
 
 type StructureEntry {

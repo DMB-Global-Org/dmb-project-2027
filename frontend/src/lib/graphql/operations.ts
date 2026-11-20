@@ -40,3 +40,7 @@ export const CHANGE_RECOMMENDER_MUTATION = `mutation ($id: ID!, $recommenderId: 
 export const REMOVE_ACCOUNT_MUTATION =
   "mutation ($id: ID!) { removeAccountFromStructure(id: $id) }";
 export const PROMOTE_MUTATION = "mutation ($id: ID!) { promoteAccount(id: $id) { id } }";
+export const MY_MAILINGS_QUERY = `query { myMailings { id subject minRole recipientCount createdAt pending sent failed } }`;
+export const MAILING_AUDIENCE_QUERY = `query ($minRole: Role) { mailingAudience(minRole: $minRole) }`;
+export const SEND_MAILING_MUTATION = `mutation ($input: SendOrgMailingInput!) {
+  sendOrgMailing(input: $input) { id recipientCount } }`;

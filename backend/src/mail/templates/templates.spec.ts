@@ -181,3 +181,55 @@ describe('promotion e-mail', () => {
     );
   });
 });
+
+describe('organizational mailing e-mail', () => {
+  const payload = {
+    senderName: 'Jan Kowalski',
+    content: {
+      pl: {
+        subject: 'Spotkanie',
+        body: 'Pierwszy akapit.\n\nDrugi\nz łamaniem.',
+      },
+      en: { subject: 'Meeting', body: 'First paragraph.' },
+    },
+  };
+
+  it('uses the version in the recipient language', () => {
+    const mail = renderMail('orgMailing', payload, 'en', 'a@b.pl');
+    expect(mail.subject).toBe('Meeting');
+    expect(mail.text).toContain('First paragraph.');
+    expect(mail.text).toContain('Message from: Jan Kowalski');
+  });
+
+  it('falls back to Polish when there is no version in the language', () => {
+    for (const locale of ['de', 'fr']) {
+      const mail = renderMail('orgMailing', payload, locale, 'a@b.pl');
+      expect(mail.subject).toBe('Spotkanie');
+    }
+  });
+
+  it('turns blank lines into paragraphs and keeps single line breaks', () => {
+    const mail = renderMail('orgMailing', payload, 'pl', 'a@b.pl');
+    expect(mail.html).toContain('<p>Pierwszy akapit.</p>');
+    expect(mail.html).toContain('<p>Drugi<br>z łamaniem.</p>');
+  });
+
+  it('escapes what the sender typed, in the text and the footer', () => {
+    const mail = renderMail(
+      'orgMailing',
+      {
+        senderName: '<i>Jan</i>',
+        content: {
+          pl: { subject: 'x', body: '<script>alert(1)</script> & co' },
+        },
+      },
+      'pl',
+      'a@b.pl',
+    );
+    expect(mail.html).not.toContain('<script>');
+    expect(mail.html).toContain(
+      '&lt;script&gt;alert(1)&lt;/script&gt; &amp; co',
+    );
+    expect(mail.html).toContain('&lt;i&gt;Jan&lt;/i&gt;');
+  });
+});

@@ -13,7 +13,8 @@
   "nav": {
     "accounts": "Structure",
     "invitations": "Invitations",
-    "profile": "My profile"
+    "profile": "My profile",
+    "mailing": "Mailing"
   },
   "roles": {
     "GENERAL": "General",
@@ -49,7 +50,10 @@
     "recipientEmail": "Recipient e-mail",
     "recipientPhone": "Recipient phone",
     "locale": "Invitation language",
-    "token": "Link"
+    "token": "Link",
+    "subject": "Subject",
+    "body": "Text",
+    "recipients": "Recipients"
   },
   "login": {
     "title": "Log in",
@@ -134,7 +138,8 @@
     "VALIDATION_FIELD": "Please check the field: {field}.",
     "NETWORK": "Cannot reach the server. Please try again.",
     "UNKNOWN": "Something went wrong. Please try again.",
-    "retry": "Try again"
+    "retry": "Try again",
+    "NO_RECIPIENTS": "No recipients: the message would reach nobody."
   },
   "account": {
     "back": "Structure",
@@ -191,5 +196,28 @@
     "cycle": "The new sponsor cannot be this person or in their downline.",
     "recommender_not_active": "The sponsor must have an active account.",
     "recommender_removed": "This sponsor was removed from the structure."
+  },
+  "mailing": {
+    "title": "Organizational mailing",
+    "new": "New message",
+    "newHint": "Active Partners in your scope with the chosen role and higher receive it. People awaiting activation and deactivated ones do not.",
+    "minRole": "Lowest role of the recipients",
+    "minRoleHint": "People with this role and higher receive the message.",
+    "audience": "It will reach {count, plural, one {# person} other {# people}}.",
+    "translations": "Versions in other languages (optional)",
+    "translationsHint": "A person without a version in their language receives the Polish one.",
+    "review": "Next",
+    "confirmTitle": "Send the message?",
+    "confirmText": "The message goes to {count, plural, one {# person} other {# people}} (role {role} and higher). This cannot be undone.",
+    "send": "Send",
+    "cancel": "Cancel",
+    "queued": "Message queued for sending.",
+    "date": "Date",
+    "subjectColumn": "Subject",
+    "fromRole": "From role",
+    "recipients": "Recipients",
+    "delivery": "Delivery",
+    "deliveryLine": "sent {sent}, queued {pending}, failed {failed}",
+    "empty": "No messages sent yet."
   }
 }

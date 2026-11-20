@@ -192,7 +192,7 @@ Zebrane dane kontaktowe służą dwóm rodzajom wysyłek.
 
 Mailing marketingowy realizuje trzeci nadrzędny cel aplikacji, czyli e-marketing. Na termin 30.11 wchodzi mailing organizacyjny i wspólny fundament wysyłek (kolejka powiadomień i adapter poczty); mailing marketingowy (Kontakty, Zgody, wysyłka) jest przesunięty na kolejny etap.
 
-Wysyłki obsługuje MailerSend. Mailingi wysyłają: Platyna do swojej organizacji oraz Administrator i SuperAdministrator do swojego zasięgu. Dezaktywowane konta nie dostają mailingu organizacyjnego.
+Wysyłki obsługuje MailerSend. Mailingi wysyłają: Platyna do swojej organizacji oraz Administrator i SuperAdministrator do swojego zasięgu. Dezaktywowane konta nie dostają mailingu organizacyjnego, a oczekujące na aktywację też nie (decyzja 88). Wysyłający wybiera najniższą rolę adresatów (dostają ją osoby z tą rolą i wyższymi); treść jest po polsku, z opcjonalnymi wersjami DE i EN. Mailing idzie do Partnerów z zasięgu wysyłającego, bez Platyn z odpiętych organizacji.
 
 ## Model danych (szkic)
 

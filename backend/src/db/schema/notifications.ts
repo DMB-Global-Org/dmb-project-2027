@@ -7,6 +7,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 import { appSchema } from './app.schema.js';
+import { mailings } from './mailings.js';
 import { notificationStatusEnum } from './enums.js';
 
 // Outbox of e-mails. A row is written in the same transaction as the business
@@ -35,8 +36,13 @@ export const notifications = appSchema.table(
       .notNull()
       .defaultNow(),
     sentAt: timestamp('sent_at', { withTimezone: true }),
+    // The organizational mailing this message belongs to, if any.
+    mailingId: uuid('mailing_id').references(() => mailings.id),
   },
-  (t) => [index('notifications_due_idx').on(t.status, t.nextAttemptAt)],
+  (t) => [
+    index('notifications_due_idx').on(t.status, t.nextAttemptAt),
+    index('notifications_mailing_idx').on(t.mailingId),
+  ],
 );
 
 export type NotificationRow = typeof notifications.$inferSelect;
