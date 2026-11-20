@@ -21,7 +21,7 @@ Monorepo pnpm + Turborepo (`pnpm-workspace.yaml`: `frontend`, `backend`), Node >
 - `frontend/`: Next.js 16 (App Router), React 19, Tailwind 4, shadcn/ui (Base UI), zustand. Przed pisaniem kodu Next.js przeczytaj `frontend/AGENTS.md`.
 - Baza: Supabase Postgres. Tabele aplikacji w schemacie `app` (`backend/src/db/schema/app.schema.ts`); nigdy nie zmieniaj schematów Supabase (`auth`, `storage` itd.).
 - Uwierzytelnianie: własne, w backendzie (nie Supabase Auth; decyzja 63). E-mail: MailerSend (decyzja 67) przez skrzynkę nadawczą `app.notifications` (decyzja 83); wiadomości zawsze kolejkuj w transakcji operacji (`OutboxService.enqueue(tx, ...)`), nie wysyłaj bezpośrednio.
-- Wdrożenie: backend na Render (`render.yaml`), frontend na Vercel; migracje uruchamia workflow `.github/workflows/db-migrate.yml` po pushu do `main`.
+- Wdrożenie: backend na Render (`render.yaml`), frontend na Vercel; migracje uruchamia workflow `.github/workflows/db-migrate.yml` po pushu do `production`. Gałąź `production` jest produkcyjna (Render i Vercel śledzą tylko ją); `main` jest gałęzią integracyjną i niczego nie wdraża.
 
 ## Komendy (z katalogu głównego)
 
