@@ -9,7 +9,8 @@
     "save": "Zapisz",
     "cancel": "Anuluj",
     "logout": "Wyloguj",
-    "theme": "Zmień motyw"
+    "theme": "Zmień motyw",
+    "version": "wersja"
   },
   "nav": {
     "accounts": "Struktura",
@@ -220,5 +221,11 @@
     "delivery": "Dostarczanie",
     "deliveryLine": "wysłane {sent}, w kolejce {pending}, błędy {failed}",
     "empty": "Brak wysłanych wiadomości."
+  },
+  "home": {
+    "title": "Witaj w dMb Projekt 2027",
+    "signedOut": "Nie jesteś zalogowany.",
+    "apiDown": "Brak połączenia z serwerem.",
+    "login": "Zaloguj"
   }
 }
