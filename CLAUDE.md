@@ -9,7 +9,7 @@ Właściciel produktu: Marek Kustosz. Rozmawiamy po polsku.
 ## Gdzie są wymagania
 
 - `docs/specyfikacja.md`: obowiązująca specyfikacja (role, uprawnienia, konta, Kontakty, mailing, model danych, RODO). Czytaj ją przed każdą większą zmianą.
-- `docs/ustalenia-i-kontekst.md`: dziennik decyzji 1–67 (które są zastąpione i dlaczego).
+- `docs/ustalenia-i-kontekst.md`: dziennik decyzji 1–77 (które są zastąpione i dlaczego).
 - `docs/funkcjonalnosci-2026-10-30.md`: zakres na termin **30.11.2026** (wersja DE obok).
 - Nie zgaduj reguł biznesowych. Gdy specyfikacja milczy albo jest niejasna, zapytaj i zaproponuj dopisanie decyzji do `docs/`.
 
@@ -43,6 +43,7 @@ Dokumentacja i interfejs używają nazw polskich, kod nazw angielskich:
 | Platyna, bezpośrednia Platyna | `Platinum`, `directPlatinum` | |
 | Rola | `Role` | `GENERAL`, `FOUNDATION`, `BUILDER`, `SILVER`, `PLATINUM`, `ADMINISTRATOR`, `SUPER_ADMINISTRATOR` |
 | Status | `PartnerStatus` | `INACTIVE`, `ACTIVE`, `GO_MAGIC`, `DIAMOND_SCHOOL` |
+| Stan konta | `AccountState` | `PENDING_ACTIVATION`, `ACTIVE`, `DEACTIVATED`; osobny od statusu |
 | Pin (tytuł) | `pinTitle` | tylko informacyjnie, wolny tekst wpisywany przez Platynę |
 | BOM / POM | `BOM` / `POM` | Business / Product Opportunity Meeting |
 | Produkt / rozwiązanie | `Solution` | otwarty katalog, np. MRA, MyBODY.ID |
@@ -61,9 +62,15 @@ Dokumentacja i interfejs używają nazw polskich, kod nazw angielskich:
 9. **Log systemowy** zapisuje każdą operację (kto, kiedy, co, obiekt, wartość przed i po, IP, User-Agent) i nie jest kasowany. Usunięcie danych osoby = nieodwracalna anonimizacja wszędzie, także w logu.
 10. **Wielojęzyczność od początku**: PL (domyślny), DE, EN; żadnych tekstów UI na sztywno w kodzie, nowy język bez zmian w kodzie.
 
-## Ważna decyzja architektoniczna (do zaplanowania przed kodem)
+## Schematy organizacji platynowych (decyzja 77)
 
-Specyfikacja wymaga osobnego schematu PostgreSQL dla każdej organizacji platynowej, tworzonego w trakcie działania aplikacji. Obecna konfiguracja Drizzle (`schemaFilter: ['app']`, statyczne migracje) obsługuje tylko schemat `app`. Zanim powstanie kod struktury, zaproponuj i uzgodnij z Markiem sposób: tworzenie schematów w locie, migracje schematów platynowych, przenoszenie organizacji przy promocji, zapytania przez wiele schematów (SuperAdministrator). Nie zastępuj po cichu schematów kolumną `tenant_id`; jeśli uważasz, że to lepsze rozwiązanie, przedstaw argumenty i poczekaj na decyzję.
+Każda organizacja platynowa ma własny schemat PostgreSQL tworzony w trakcie działania aplikacji. Szczegóły w `docs/ustalenia-i-kontekst.md` (decyzja 77); w skrócie:
+
+- Tabele organizacji definiuje fabryka (jedna definicja, zapytania kwalifikowane nazwą schematu). Nazwę schematu generuje serwer i waliduje w rejestrze Platyn, nigdy nie pochodzi od użytkownika.
+- Migracje w dwóch torach: `app` przez `drizzle-kit` (`schemaFilter: ['app']`) oraz tor organizacji (osobny config, własny runner, stan w `app.org_schema_migrations`). Runner nie czyta `journal.json`.
+- Promocja do Platinum to jedna transakcja (schemat, przeniesienie wierszy, katalog kont, rejestr, log).
+- Zostajemy na `drizzle-orm` 0.45 i `drizzle-kit` 0.31; nie aktualizuj do wersji 1.0 bez uzgodnienia.
+- Nie zastępuj schematów kolumną `tenant_id`; jeśli uważasz, że to lepsze, przedstaw argumenty i poczekaj na decyzję.
 
 ## Sposób pracy
 

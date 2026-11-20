@@ -1,6 +1,6 @@
 # dMb Projekt 2027 – dziennik decyzji i kontekst
 
-Stan na 19.11.2026 · Marek Kustosz
+Stan na 20.11.2026 · Marek Kustosz
 
 Historia ustaleń z rozmów o specyfikacji (20.10–01.11.2026). Aktualny opis funkcjonalności jest w `docs/specyfikacja.md`; ten plik wyjaśnia, skąd wzięły się decyzje i które zostały zastąpione.
 
@@ -96,18 +96,38 @@ Decyzje oznaczone „(zastąpione)” zmieniła sekcja „Zmiany z 30.10.2026”
 55. Rolę i status Platyny zmienia Platyna w jej górnej linii (najbliższa albo wyższa), Administrator w górnej linii lub SuperAdministrator. Widzą konto samej Platyny, nie jej odpiętą organizację.
 56. Rola Gold została usunięta celowo.
 57. Piny zostają jako osobne pole obok Statusu; Platyna wpisuje swój pin ręcznie.
-58. Przy zaproszeniu e-mailem lub linkiem zapraszający automatycznie zostaje rekomendującym.
+58. (doprecyzowane w 69) Przy zaproszeniu e-mailem lub linkiem zapraszający automatycznie zostaje rekomendującym.
 59. Kanał weryfikacji telefonu (SMS lub WhatsApp) wybierzemy przy budowie, według dostępności i ceny usług.
 60. Materiały dodają SuperAdministrator i Administratorzy.
 61. Opis funkcjonalności sporządzony 30.10.2026; termin realizacji tych funkcjonalności: 30.11.2026.
 
 ### Doprecyzowania z 19.11.2026
-62. Pierwsze konta zakłada SuperAdministrator, zanim istnieje jakakolwiek Platyna. Nie mają bezpośredniej Platyny (numer pusty) i leżą w schemacie dla struktury bez Platyny (`org_root`). Przy promocji do Platinum aplikacja najpierw uzupełnia numer bezpośredniej Platyny u całego down-line'u wypromowanej osoby, a potem przenosi organizację do nowego schematu. „Numer Platyny” oznacza numer Partnera (ABO# / Numer PA), nie identyfikator rekordu.
+62. (zastąpione, patrz 68) Pierwsze konta zakłada SuperAdministrator, zanim istnieje jakakolwiek Platyna. Nie mają bezpośredniej Platyny (numer pusty) i leżą w schemacie dla struktury bez Platyny (`org_root`). Przy promocji do Platinum aplikacja najpierw uzupełnia numer bezpośredniej Platyny u całego down-line'u wypromowanej osoby, a potem przenosi organizację do nowego schematu. „Numer Platyny” oznacza numer Partnera (ABO# / Numer PA), nie identyfikator rekordu.
 63. Uwierzytelnianie własne, w backendzie (nie Supabase Auth). Na start rejestracja z hasłem i potwierdzeniem hasła, bez weryfikacji adresu e-mail. Weryfikacja telefonu (WhatsApp lub SMS) odłożona.
 64. Nie przewidujemy degradacji Platyny: rolę Platinum nie można obniżyć (konto można tylko dezaktywować).
 65. Status (Nieaktywny, Aktywny, GoMagic, DiamondSchool) i aktywność konta to osobne pola. Status jest informacją od bezpośredniej Platyny; aktywność konta blokuje logowanie.
-66. Znacznik „profil uzupełniony” ustawia się automatycznie, gdy właściciel poda wszystkie dane i zgody. Konto aktywuje uprawniona osoba (Platyna we własnej organizacji, Administrator, SuperAdministrator) i nadaje rolę. „Wniosek o aktywację” nie powstaje; zastępuje go powiadomienie.
+66. (doprecyzowane w 73) Znacznik „profil uzupełniony” ustawia się automatycznie, gdy właściciel poda wszystkie dane i zgody. Konto aktywuje uprawniona osoba (Platyna we własnej organizacji, Administrator, SuperAdministrator) i nadaje rolę. „Wniosek o aktywację” nie powstaje; zastępuje go powiadomienie.
 67. Mailing: dostawca MailerSend. Wysyła Platyna do swojej organizacji, Administrator i SuperAdministrator do swojego zasięgu.
+
+### Doprecyzowania z 20.11.2026
+68. (zastępuje 62) Konta powstają wyłącznie z linków rejestracyjnych, nie z ogólnodostępnego formularza. Formularz: adres e-mail, hasło (z potwierdzeniem), kraj (domyślnie PL), numer Partnera właściciela. Link niesie rekomendującego i organizację, więc nie pytamy o numer rekomendującego ani Platyny. Bezpośrednia Platyna wynika ze schematu organizacji i nie jest polem konta (nie ma „uzupełniania relacji” przy promocji). Pierwsze konta to Platyny: SuperAdministrator generuje link rodzaju „Platyna”, a po wypełnieniu formularza aplikacja tworzy nowy schemat i zakłada w nim konto jako korzeń z rolą Platinum (promocja organizacji o pustej dolnej linii). Schemat `org_root` nie istnieje. Numer rekomendującego Platyny (osoby spoza organizacji, często spoza aplikacji) jest deklaracją uzupełnianą o powiązanie, gdy ta osoba pojawi się w aplikacji.
+69. Przy generowaniu linku zapraszający wskazuje rekomendującego: siebie albo osobę ze swojej dolnej linii.
+70. Role Ogólne, Foundation, Builder i Silver są flagami dostępu do zasobów i nie mają skutków dla struktury. Strukturalnie liczy się tylko Platinum; Platynę rozpoznaje wpis w rejestrze Platyn, a nie sama wartość roli.
+71. Zmiana rekomendującego: każdy Partner wobec swojej dolnej linii, niezależnie od roli, pod warunkiem że jest przodkiem (lub sobą) zarówno przenoszonej osoby, jak i nowego rekomendującego. Dolna linia przenoszonej osoby idzie razem z nią. Tylko w obrębie jednej organizacji; nowy rekomendujący nie może być przenoszoną osobą ani należeć do jej dolnej linii; korzeni organizacji (Platyn) nie przenosimy. Konto ma stałe pole „kto zaprosił” i zmienne „rekomendujący”; poprzednia wartość zostaje w logu. Powiadomienie dostają przeniesiona osoba i nowy rekomendujący (Platyna nie).
+72. Usunięcie osoby ze struktury: osoby przez nią zarekomendowane przechodzą do jej rekomendującego. Konto jest oznaczone jako usunięte ze struktury (data, kto, rekomendujący w chwili usunięcia), dezaktywowane i znika z drzewa oraz list; wiersz zostaje, numer Partnera pozostaje zarezerwowany. To nie jest usunięcie danych (anonimizacja to osobna operacja, decyzja 33). Nie można usunąć siebie ani korzenia organizacji. Kto może usuwać i przywracanie: sprawy otwarte.
+73. (doprecyzowuje 65 i 66) Konto ma trzy stany: oczekuje na aktywację → aktywne ↔ dezaktywowane. Etap 1 (oczekuje na aktywację): konto może się zalogować wyłącznie po to, by uzupełnić profil; nie ma żadnych możliwości operacyjnych (rekomendowanie, generowanie linków, zakładanie kont itp.) ani dostępu do repozytorium. Etap 2 (aktywacja przez uprawnioną osobę, zwykle Platynę): włącza wszystkie możliwości operacyjne i dostęp do materiałów roli Ogólne. Dezaktywowane konto nie może się zalogować (sesje po stronie serwera, odcięcie natychmiastowe), zostaje w drzewie z rolą, statusem i danymi, jego dolna linia się nie zmienia. Wypada z mailingu organizacyjnego, a jego nieużyte linki rejestracyjne tracą ważność. Reaktywacja przez tę samą grupę uprawnionych, bez ponownej rejestracji; rola i status zostają. Dezaktywowana Platyna: organizacja działa dalej, zarządzają nią Administrator i SuperAdministrator; Platyna wyżej w linii może zmieniać jej rolę i status, ale nie dezaktywować jej organizacji.
+74. Na starcie nie ma importu istniejących struktur: wszyscy rejestrują się przez linki, więc konta powstają od góry (najpierw Platyna, potem jej organizacja).
+75. Link rejestracyjny można otwierać wielokrotnie, aby rozpocząć rejestrację, ale traci ważność z chwilą zapisania konta, a bez zapisu po 72 godzinach od wygenerowania.
+76. Konto Platyny założone z linku SuperAdministratora nie jest aktywne od razu: przechodzi te same dwa etapy co każde konto (decyzja 73).
+77. Mechanika osobnych schematów organizacji w Drizzle (zaakceptowana 20.11.2026):
+    - Fabryka tabel: jedna definicja tabel organizacji, zapytania w pełni kwalifikowane nazwą schematu. Nazwę (`org_` + krótki identyfikator) generuje serwer i każde użycie waliduje w rejestrze Platyn; nigdy nie pochodzi od użytkownika.
+    - Migracje w dwóch torach: główny (`app`, `drizzle-kit` jak dotąd) i organizacji (drugi config dla schematu wzorcowego, własny runner podmieniający nazwę schematu, wykonujący migracje w transakcji i zapisujący stan w `app.org_schema_migrations`). Runner działa przy tworzeniu schematu oraz po wdrożeniu w pętli po wszystkich schematach (dodatkowy krok `db-migrate.yml`, najpierw `app`, potem organizacje). Czyta posortowane pliki SQL z folderu, nie `journal.json`.
+    - Promocja do Platinum jako jedna transakcja z blokadą doradczą organizacji źródłowej (utworzenie schematu, przeniesienie wierszy bez zmiany identyfikatorów, zmiana schematu w katalogu kont, rejestr Platyn, log, powiadomienia).
+    - Zapytania przez wiele schematów (SuperAdministrator): osobne zapytania z listy w rejestrze Platyn, wyniki scalane.
+    - Testy integracyjne na prawdziwym Postgresie (lokalnie Docker, w CI jako usługa).
+    - Zostajemy na `drizzle-orm` 0.45 i `drizzle-kit` 0.31; bez przejścia na wersję 1.0 (RC) przed 30.11.
+    - Schematy `org_*` nie są wystawiane w Data API Supabase.
+    - Odrzucone: kolumna `tenant_id`, `search_path` per połączenie, kopiowanie tabel z wzorca poleceniem `LIKE`.
 
 ## Sprawy otwarte
 
@@ -115,7 +135,9 @@ Decyzje oznaczone „(zastąpione)” zmieniła sekcja „Zmiany z 30.10.2026”
 - [ ] Zasięg adresatów mailingu marketingowego (Kontakty i Klienci są wspólni ponad strukturami): kogo może zapraszać Platyna, a kogo Administrator?
 - [ ] Weryfikacja e-maila potwierdzeniem linkiem przed wysyłką marketingową (zgody bez weryfikacji adresu są prawnie kruche); do potwierdzenia z prawnikiem.
 - [ ] Domena własna (Vercel, MailerSend: SPF/DKIM) i konfiguracja MailerSend; bez tego nie wyślemy żadnych e-maili.
-- [ ] Weryfikacja telefonu: wybrać SMS lub WhatsApp (porównać dostępność i ceny usług).
+- [ ] Czy numer rekomendującego Platyny ma własne pole kraju (domyślnie kraj właściciela konta)?
+- [ ] Kto może usuwać osoby ze struktury (rekomendacja: Platyna w swojej organizacji, Administrator w dolnej linii, SuperAdministrator) i czy przywracanie usuniętych ma być w wersji 1 (rekomendacja: później)?
+- [ ] Kto aktywuje i dezaktywuje samą Platynę: jest korzeniem własnej organizacji, więc raczej nie może zrobić tego sobie; specyfikacja nie rozstrzyga (rekomendacja: SuperAdministrator lub Administrator w górnej linii).- [ ] Weryfikacja telefonu: wybrać SMS lub WhatsApp (porównać dostępność i ceny usług).
 - [ ] Z prawnikiem: znacznik oświadczenia MRA, anonimizacja, przechowywanie logu bez usuwania.
 - [ ] Polityka prywatności: opisać logowanie IP i User-Agent (prawnie uzasadniony interes).
 - [ ] E-marketing (dalszy etap): zakres kampanii, narzędzie do wysyłek, obsługa wypisów i wycofania zgód.
