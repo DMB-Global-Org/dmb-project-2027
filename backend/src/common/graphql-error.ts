@@ -9,8 +9,18 @@ export type ErrorCode =
   | 'INVALID_CREDENTIALS'
   | 'ACCOUNT_DEACTIVATED'
   | 'TOO_MANY_ATTEMPTS'
-  | 'VALIDATION_FAILED';
+  | 'VALIDATION_FAILED'
+  // The permission engine said no; `reason` carries its DenyReason.
+  | 'FORBIDDEN'
+  // Unknown, expired, already used, or its inviter can no longer invite.
+  | 'INVITATION_INVALID'
+  | 'EMAIL_TAKEN'
+  | 'PARTNER_NUMBER_TAKEN';
 
-export function appError(code: ErrorCode): GraphQLError {
-  return new GraphQLError(code, { extensions: { code } });
+/** `details` (e.g. `{ field }` or `{ reason }`) ends up in `extensions` next to the code. */
+export function appError(
+  code: ErrorCode,
+  details?: Record<string, string>,
+): GraphQLError {
+  return new GraphQLError(code, { extensions: { ...details, code } });
 }

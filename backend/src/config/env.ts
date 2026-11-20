@@ -30,6 +30,11 @@ const envSchema = z.object({
       }
     }),
   DATABASE_URL: z.url(),
+  // Public address of the frontend; registration links are built from it.
+  APP_BASE_URL: z
+    .url()
+    .default('http://localhost:3000')
+    .transform((value) => value.replace(/\/+$/, '')),
   // How long a login lasts.
   SESSION_TTL_DAYS: z.coerce.number().int().positive().default(14),
   // Number of reverse proxies in front of the app (Render, Vercel). With it

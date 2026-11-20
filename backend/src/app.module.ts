@@ -12,6 +12,7 @@ import { GraphQLErrorFilter } from './common/graphql-error.filter.js';
 import { validateEnv } from './config/env.js';
 import { DatabaseModule } from './db/database.module.js';
 import { HealthModule } from './health/health.module.js';
+import { InvitationsModule } from './invitations/invitations.module.js';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { HealthModule } from './health/health.module.js';
     }),
     DatabaseModule,
     AuthModule,
+    InvitationsModule,
     HealthModule,
   ],
   controllers: [AppController],

@@ -29,7 +29,7 @@ describe('authentication over GraphQL (integration)', () => {
 
   type Agent = ReturnType<typeof request.agent>;
   const gql = (
-    agent: Agent | ReturnType<typeof request>,
+    agent: Agent,
     query: string,
     variables?: object,
   ) => agent.post('/graphql').send({ query, variables });

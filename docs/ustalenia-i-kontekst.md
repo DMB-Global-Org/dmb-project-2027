@@ -132,6 +132,13 @@ Decyzje oznaczone „(zastąpione)” zmieniła sekcja „Zmiany z 30.10.2026”
 79. (uzupełnia 72) Osoby ze struktury usuwają: Platyna w swojej organizacji, Administrator w swojej dolnej linii i SuperAdministrator (tak jak aktywację). Przywracanie usuniętych nie wchodzi do wersji 1.
 80. Na 30.11 nie ma resetu hasła e-mailem. Zapomniane hasło: uprawniona osoba wystawia nowy link ustawienia hasła (jak przy manualnym założeniu konta).
 81. Rolę Administrator nadaje tylko SuperAdministrator.
+82. (doprecyzowanie linków rejestracyjnych, 20.11.2026; założenia robocze do potwierdzenia przez Marka)
+    - Przy generowaniu linku trzeba podać adresata: adres e-mail albo numer telefonu (WhatsApp); służy do wstępnego wypełnienia formularza i nie wymusza, by konto miało ten adres.
+    - Treść linku widać tylko raz, w chwili tworzenia (w bazie jest wyłącznie skrót). Zgubiony link zastępuje się nowym.
+    - Termin 72 godzin liczy się od wygenerowania linku (decyzja 75). Link działa tylko, dopóki zapraszający ma aktywne konto (decyzja 73); rekomendujący wskazany w linku musi być aktywny w chwili jego tworzenia, a zapraszający musi go mieć w swojej dolnej linii albo być nim sam (decyzja 69).
+    - Zapisanie formularza zakłada konto w stanie „oczekuje na aktywację” z rolą Ogólne (dla linku Platyny: rola Platinum, korzeń nowej organizacji) i od razu loguje właściciela, żeby mógł uzupełnić profil (etap 1, decyzja 73).
+    - Numer Partnera w formularzu: bez białych znaków, wielkie litery, 3–20 znaków (litery, cyfry, myślnik); format numerów Amway nie jest znany, więc nie sprawdzamy nic więcej. Ten sam numer jest zajęty tylko w obrębie tego samego kraju. Kraj: dwuliterowy kod, domyślnie PL.
+    - Błędy formularza (zajęty e-mail, zajęty numer, błędne dane) nie zużywają linku.
 
 ## Sprawy otwarte
 

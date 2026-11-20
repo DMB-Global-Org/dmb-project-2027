@@ -1,13 +1,12 @@
-import { Inject } from '@nestjs/common';
 import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { z } from 'zod';
 import { appError } from '../common/graphql-error.js';
-import { AUTH_CONFIG, type AuthConfig } from './auth.config.js';
 import { AuthService } from './auth.service.js';
 import type { AuthContext, GqlContext } from './auth.types.js';
 import { requestMeta } from './cookies.js';
 import { CurrentAuth } from './current-actor.decorator.js';
 import { Public } from './public.decorator.js';
+import { SessionCookie } from './session-cookie.js';
 import { Viewer } from './viewer.model.js';
 
 const loginInput = z.object({
@@ -19,7 +18,7 @@ const loginInput = z.object({
 export class AuthResolver {
   constructor(
     private readonly auth: AuthService,
-    @Inject(AUTH_CONFIG) private readonly config: AuthConfig,
+    private readonly cookie: SessionCookie,
   ) {}
 
   /** Who is logged in, or null. Public so the frontend can ask before login. */
@@ -44,26 +43,14 @@ export class AuthResolver {
       input.data.password,
       requestMeta(ctx.req),
     );
-    ctx.res.cookie(this.config.cookieName, result.token, {
-      ...this.cookieOptions(),
-      expires: result.expiresAt,
-    });
+    this.cookie.set(ctx.res, result.token, result.expiresAt);
     return Viewer.from(result.auth);
   }
 
   @Mutation(() => Boolean)
   async logout(@Context() ctx: GqlContext): Promise<boolean> {
     if (ctx.sessionToken) await this.auth.logout(ctx.sessionToken);
-    ctx.res.clearCookie(this.config.cookieName, this.cookieOptions());
+    this.cookie.clear(ctx.res);
     return true;
-  }
-
-  private cookieOptions() {
-    return {
-      httpOnly: true,
-      secure: this.config.secureCookie,
-      sameSite: 'lax' as const,
-      path: '/',
-    };
   }
 }
