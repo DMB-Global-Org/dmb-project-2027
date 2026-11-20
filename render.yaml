@@ -33,7 +33,7 @@ services:
         value: "24"
       - key: DATABASE_URL # Supabase transaction pooler (port 6543)
         sync: false
-      - key: APP_BASE_URL # public address of the frontend, e.g. https://dmb-project-2027.vercel.app
+      - key: APP_BASE_URL # public address of the frontend, e.g. https://project2027.dmbglobal.pl
         sync: false
       - key: MAIL_DRIVER # console (log only) until the sending domain is set up, then mailersend
         value: console
@@ -43,7 +43,7 @@ services:
         sync: false
       - key: TRUST_PROXY_HOPS # reverse proxies in front of the app: 1 = Render only, 2 = Vercel rewrite + Render
         sync: false
-      - key: CORS_ORIGINS # e.g. https://dmb-project-2027.vercel.app
+      - key: CORS_ORIGINS # e.g. https://project2027.dmbglobal.pl
         sync: false
       - key: CORS_ORIGIN_PATTERN # e.g. ^https://dmb-project-2027-[a-z0-9-]+-dmb-global-org\.vercel\.app$
         sync: false
