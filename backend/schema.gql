@@ -8,6 +8,7 @@ input CreateInvitationInput {
   recipientEmail: String
   recipientPhone: String
   recommenderId: ID
+  sendEmail: Boolean
 }
 
 type CreatedInvitation {

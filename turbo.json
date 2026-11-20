@@ -10,13 +10,13 @@
     "dev": {
       "cache": false,
       "persistent": true,
-      "passThroughEnv": ["PORT", "CORS_ORIGINS", "CORS_ORIGIN_PATTERN", "DATABASE_URL", "SESSION_TTL_DAYS", "TRUST_PROXY_HOPS", "APP_BASE_URL"]
+      "passThroughEnv": ["PORT", "CORS_ORIGINS", "CORS_ORIGIN_PATTERN", "DATABASE_URL", "SESSION_TTL_DAYS", "TRUST_PROXY_HOPS", "APP_BASE_URL", "MAIL_DRIVER", "MAILERSEND_API_KEY", "MAIL_FROM_EMAIL", "MAIL_FROM_NAME", "MAIL_DISPATCH_INTERVAL_MS"]
     },
     "start": {
       "dependsOn": ["build"],
       "cache": false,
       "persistent": true,
-      "passThroughEnv": ["PORT", "CORS_ORIGINS", "CORS_ORIGIN_PATTERN", "DATABASE_URL", "SESSION_TTL_DAYS", "TRUST_PROXY_HOPS", "APP_BASE_URL"]
+      "passThroughEnv": ["PORT", "CORS_ORIGINS", "CORS_ORIGIN_PATTERN", "DATABASE_URL", "SESSION_TTL_DAYS", "TRUST_PROXY_HOPS", "APP_BASE_URL", "MAIL_DRIVER", "MAILERSEND_API_KEY", "MAIL_FROM_EMAIL", "MAIL_FROM_NAME", "MAIL_DISPATCH_INTERVAL_MS"]
     },
     "lint": {},
     "test": {},

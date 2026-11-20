@@ -71,7 +71,39 @@ describe('registerSchema', () => {
   });
 });
 
+describe('explicit nulls from GraphQL', () => {
+  it('count as omitted fields', () => {
+    expect(registerSchema.parse({ ...FORM, country: null }).country).toBe('PL');
+    const parsed = createInvitationSchema.parse({
+      kind: 'PARTNER',
+      recipientEmail: 'a@b.pl',
+      recipientPhone: null,
+      recommenderId: null,
+      locale: null,
+      sendEmail: null,
+    });
+    expect(parsed).toMatchObject({ locale: 'pl', sendEmail: false });
+  });
+});
+
 describe('createInvitationSchema', () => {
+  it('sends e-mail only to an address it has', () => {
+    expect(
+      createInvitationSchema.safeParse({
+        kind: 'PARTNER',
+        recipientPhone: '+48 600 100 200',
+        sendEmail: true,
+      }).success,
+    ).toBe(false);
+    expect(
+      createInvitationSchema.safeParse({
+        kind: 'PARTNER',
+        recipientEmail: 'a@b.pl',
+        sendEmail: true,
+      }).success,
+    ).toBe(true);
+  });
+
   it('needs an e-mail address or a phone number', () => {
     expect(createInvitationSchema.safeParse({ kind: 'PARTNER' }).success).toBe(
       false,

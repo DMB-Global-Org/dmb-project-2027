@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { and, desc, eq, gt, isNull } from 'drizzle-orm';
 import { AuditService } from '../audit/audit.service.js';
 import type { AuthContext, RequestMeta } from '../auth/auth.types.js';
@@ -7,6 +8,7 @@ import { can } from '../authz/can.js';
 import type { Decision } from '../authz/types.js';
 import { appError } from '../common/graphql-error.js';
 import type { Locale } from '../common/locales.js';
+import type { Env } from '../config/env.js';
 import { DB, type Database } from '../db/database.tokens.js';
 import {
   invitations,
@@ -14,6 +16,7 @@ import {
   type InvitationRow,
 } from '../db/schema/index.js';
 import { TxRunner } from '../db/tx-runner.js';
+import { OutboxService } from '../mail/outbox.service.js';
 import { RelationLoader } from '../structure/relation-loader.js';
 import {
   hashInvitationToken,
@@ -28,6 +31,8 @@ export interface CreateInvitationInput {
   recipientEmail?: string;
   recipientPhone?: string;
   locale: Locale;
+  /** Send the link to `recipientEmail` (needs one); otherwise the inviter shares it. */
+  sendEmail: boolean;
 }
 
 export type InvitationStatus = 'PENDING' | 'USED' | 'EXPIRED';
@@ -54,6 +59,8 @@ export class InvitationsService {
     private readonly relations: RelationLoader,
     private readonly actors: ActorService,
     private readonly audit: AuditService,
+    private readonly outbox: OutboxService,
+    private readonly config: ConfigService<Env, true>,
   ) {}
 
   /**
@@ -65,7 +72,7 @@ export class InvitationsService {
     input: CreateInvitationInput,
     meta: RequestMeta,
     now = new Date(),
-  ): Promise<{ invitation: InvitationRow; token: string }> {
+  ): Promise<{ invitation: InvitationRow; token: string; url: string }> {
     return this.tx.run(async (tx) => {
       let recommenderId: string | null = null;
       let orgSchema: string | null = null;
@@ -103,6 +110,7 @@ export class InvitationsService {
       }
 
       const token = newInvitationToken();
+      const url = this.registrationUrl(token);
       const [invitation] = await tx
         .insert(invitations)
         .values({
@@ -133,11 +141,31 @@ export class InvitationsService {
           recipientEmail: input.recipientEmail ?? null,
           recipientPhone: input.recipientPhone ?? null,
           expiresAt: invitation!.expiresAt,
+          emailQueued: input.sendEmail,
         },
         meta,
       });
-      return { invitation: invitation!, token };
+
+      if (input.sendEmail) {
+        // Same transaction: the e-mail exists only if the invitation does.
+        await this.outbox.enqueue(tx, {
+          type: 'invitation',
+          recipientEmail: input.recipientEmail!,
+          locale: input.locale,
+          payload: {
+            url,
+            kind: input.kind,
+            expiresAt: invitation!.expiresAt.toISOString(),
+          },
+        });
+      }
+      return { invitation: invitation!, token, url };
     });
+  }
+
+  /** The address of the registration page for a token. */
+  registrationUrl(token: string): string {
+    return `${this.config.get('APP_BASE_URL', { infer: true })}/register/${token}`;
   }
 
   /** The invitations the account created, newest first, with their state. */

@@ -110,6 +110,10 @@ export class CreateInvitationInput {
 
   @Field(() => String, { nullable: true })
   locale?: string;
+
+  /** Send the link by e-mail to `recipientEmail`. Default: no. */
+  @Field(() => Boolean, { nullable: true })
+  sendEmail?: boolean;
 }
 
 @InputType()

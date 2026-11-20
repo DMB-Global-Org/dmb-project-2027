@@ -43,3 +43,11 @@ export const invitationKindEnum = appSchema.enum(
   'invitation_kind',
   INVITATION_KINDS,
 );
+
+// Delivery state of an outgoing message in the outbox.
+export const NOTIFICATION_STATUSES = ['PENDING', 'SENT', 'FAILED'] as const;
+export type NotificationStatus = (typeof NOTIFICATION_STATUSES)[number];
+export const notificationStatusEnum = appSchema.enum(
+  'notification_status',
+  NOTIFICATION_STATUSES,
+);
