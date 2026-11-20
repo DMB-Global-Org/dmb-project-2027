@@ -17,6 +17,22 @@ export const PARTNER_STATUSES = [
 ] as const;
 export type PartnerStatus = (typeof PARTNER_STATUSES)[number];
 
+/** Roles that may send organizational mailings (the permission engine decides on the server). */
+export function canSendMailing(role: Role): boolean {
+  return role === "PLATINUM" || role === "ADMINISTRATOR" || role === "SUPER_ADMINISTRATOR";
+}
+
+export interface Mailing {
+  id: string;
+  subject: string;
+  minRole: Role;
+  recipientCount: number;
+  createdAt: string;
+  pending: number;
+  sent: number;
+  failed: number;
+}
+
 export type AccountState = "PENDING_ACTIVATION" | "ACTIVE" | "DEACTIVATED";
 
 export interface Viewer {

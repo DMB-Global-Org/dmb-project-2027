@@ -57,6 +57,13 @@
       "when": 1795197652977,
       "tag": "0007_org_schemas_promotion",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1795201857305,
+      "tag": "0008_mailings",
+      "breakpoints": true
     }
   ]
 }

@@ -14,6 +14,7 @@ import { validateEnv } from './config/env.js';
 import { DatabaseModule } from './db/database.module.js';
 import { HealthModule } from './health/health.module.js';
 import { InvitationsModule } from './invitations/invitations.module.js';
+import { MailingModule } from './mailing/mailing.module.js';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { InvitationsModule } from './invitations/invitations.module.js';
     AuthModule,
     InvitationsModule,
     AccountsModule,
+    MailingModule,
     HealthModule,
   ],
   controllers: [AppController],

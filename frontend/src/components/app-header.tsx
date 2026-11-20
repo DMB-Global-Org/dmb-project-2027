@@ -3,7 +3,7 @@ import Link from "next/link";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { LogoutButton } from "@/components/logout-button";
 import { ThemeToggle } from "@/components/theme-toggle";
-import type { Viewer } from "@/lib/graphql/types";
+import { canSendMailing, type Viewer } from "@/lib/graphql/types";
 
 /** Top bar of the signed-in application. */
 export async function AppHeader({ viewer }: { viewer: Viewer }) {
@@ -20,6 +20,7 @@ export async function AppHeader({ viewer }: { viewer: Viewer }) {
         <nav className="flex flex-1 items-center gap-4 text-sm">
           {active && <Link href="/accounts">{t("accounts")}</Link>}
           {active && <Link href="/invitations">{t("invitations")}</Link>}
+          {active && canSendMailing(viewer.role) && <Link href="/mailing">{t("mailing")}</Link>}
           <Link href="/profile">{t("profile")}</Link>
         </nav>
         <div className="flex items-center gap-3 text-xs">

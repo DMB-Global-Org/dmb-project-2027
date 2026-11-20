@@ -17,7 +17,9 @@ export type ErrorCode =
   // Unknown, expired, already used, or its inviter can no longer invite.
   | 'INVITATION_INVALID'
   | 'EMAIL_TAKEN'
-  | 'PARTNER_NUMBER_TAKEN';
+  | 'PARTNER_NUMBER_TAKEN'
+  // An organizational mailing that would reach nobody.
+  | 'NO_RECIPIENTS';
 
 /** `details` (e.g. `{ field }` or `{ reason }`) ends up in `extensions` next to the code. */
 export function appError(

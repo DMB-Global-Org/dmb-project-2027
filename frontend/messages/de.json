@@ -13,7 +13,8 @@
   "nav": {
     "accounts": "Struktur",
     "invitations": "Einladungen",
-    "profile": "Mein Profil"
+    "profile": "Mein Profil",
+    "mailing": "Mailing"
   },
   "roles": {
     "GENERAL": "Allgemein",
@@ -49,7 +50,10 @@
     "recipientEmail": "E-Mail des Empfängers",
     "recipientPhone": "Telefon des Empfängers",
     "locale": "Sprache der Einladung",
-    "token": "Link"
+    "token": "Link",
+    "subject": "Betreff",
+    "body": "Text",
+    "recipients": "Empfänger"
   },
   "login": {
     "title": "Anmelden",
@@ -134,7 +138,8 @@
     "VALIDATION_FIELD": "Bitte prüfen Sie das Feld: {field}.",
     "NETWORK": "Der Server ist nicht erreichbar. Bitte erneut versuchen.",
     "UNKNOWN": "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
-    "retry": "Erneut versuchen"
+    "retry": "Erneut versuchen",
+    "NO_RECIPIENTS": "Keine Empfänger: Die Nachricht würde niemanden erreichen."
   },
   "account": {
     "back": "Struktur",
@@ -191,5 +196,28 @@
     "cycle": "Der neue Empfehlende darf nicht diese Person oder in deren Downline sein.",
     "recommender_not_active": "Der Empfehlende muss ein aktives Konto haben.",
     "recommender_removed": "Dieser Empfehlende wurde aus der Struktur entfernt."
+  },
+  "mailing": {
+    "title": "Organisationsmailing",
+    "new": "Neue Nachricht",
+    "newHint": "Aktive Partner in Ihrem Bereich mit der gewählten Rolle und höher erhalten sie. Personen, die auf die Aktivierung warten, und deaktivierte Konten nicht.",
+    "minRole": "Niedrigste Rolle der Empfänger",
+    "minRoleHint": "Personen mit dieser Rolle und höher erhalten die Nachricht.",
+    "audience": "Sie erreicht {count, plural, one {# Person} other {# Personen}}.",
+    "translations": "Versionen in anderen Sprachen (optional)",
+    "translationsHint": "Wer keine Version in seiner Sprache hat, erhält die polnische.",
+    "review": "Weiter",
+    "confirmTitle": "Nachricht senden?",
+    "confirmText": "Die Nachricht geht an {count, plural, one {# Person} other {# Personen}} (Rolle {role} und höher). Das lässt sich nicht rückgängig machen.",
+    "send": "Senden",
+    "cancel": "Abbrechen",
+    "queued": "Nachricht zum Versand eingereiht.",
+    "date": "Datum",
+    "subjectColumn": "Betreff",
+    "fromRole": "Ab Rolle",
+    "recipients": "Empfänger",
+    "delivery": "Zustellung",
+    "deliveryLine": "gesendet {sent}, in Warteschlange {pending}, Fehler {failed}",
+    "empty": "Noch keine Nachrichten gesendet."
   }
 }
