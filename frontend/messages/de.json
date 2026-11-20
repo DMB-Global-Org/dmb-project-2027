@@ -1,0 +1,32 @@
+{
+  "app": {
+    "tagline": "Education and Coaching Program"
+  },
+  "common": {
+    "language": "Sprache",
+    "loading": "Wird geladen…",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "logout": "Abmelden"
+  },
+  "home": {
+    "title": "Willkommen bei dMb Projekt 2027",
+    "signedOut": "Sie sind nicht angemeldet.",
+    "signedIn": "Angemeldet als {email}.",
+    "apiDown": "Der Server ist nicht erreichbar.",
+    "apiOk": "Der Server läuft."
+  },
+  "errors": {
+    "UNAUTHENTICATED": "Bitte melden Sie sich an, um fortzufahren.",
+    "FORBIDDEN": "Sie sind für diese Aktion nicht berechtigt.",
+    "INVALID_CREDENTIALS": "E-Mail oder Passwort ist falsch.",
+    "ACCOUNT_DEACTIVATED": "Dieses Konto wurde deaktiviert.",
+    "TOO_MANY_ATTEMPTS": "Zu viele Versuche. Bitte versuchen Sie es später erneut.",
+    "INVITATION_INVALID": "Dieser Link ist ungültig oder abgelaufen.",
+    "EMAIL_TAKEN": "Ein Konto mit dieser E-Mail-Adresse existiert bereits.",
+    "PARTNER_NUMBER_TAKEN": "Diese Partnernummer ist bereits registriert.",
+    "VALIDATION_FAILED": "Bitte prüfen Sie Ihre Eingaben.",
+    "NETWORK": "Der Server ist nicht erreichbar. Bitte erneut versuchen.",
+    "UNKNOWN": "Etwas ist schiefgelaufen. Bitte erneut versuchen."
+  }
+}
