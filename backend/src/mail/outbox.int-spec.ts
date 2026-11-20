@@ -66,9 +66,13 @@ describe('outbox (integration)', () => {
       .where(eq(notifications.id, id));
     return found!;
   };
-  /** Runs the dispatcher far enough in the future that every row is due. */
+  // The database stamps rows with microsecond precision, JavaScript clocks
+  // have milliseconds: a run in the same millisecond as the insert would not
+  // see the row yet. A second of slack makes the tests deterministic.
+  const SLACK_MS = 1_000;
+  /** Runs the dispatcher `offsetMs` (plus the slack) from now. */
   const run = (offsetMs = 0) =>
-    dispatcher.runOnce(new Date(Date.now() + offsetMs));
+    dispatcher.runOnce(new Date(Date.now() + SLACK_MS + offsetMs));
 
   beforeAll(() => {
     testDb = createTestDb();
@@ -212,7 +216,11 @@ describe('outbox (integration)', () => {
     const queued = await Promise.all(Array.from({ length: 8 }, () => queue()));
     const other = new OutboxDispatcher(testDb.db, tx(), transport, config);
 
-    const [a, b] = await Promise.all([dispatcher.runOnce(), other.runOnce()]);
+    const later = new Date(Date.now() + SLACK_MS);
+    const [a, b] = await Promise.all([
+      dispatcher.runOnce(later),
+      other.runOnce(later),
+    ]);
 
     expect(a.sent + b.sent).toBe(8);
     expect(transport.sent).toHaveLength(8);

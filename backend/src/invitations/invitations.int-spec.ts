@@ -823,7 +823,8 @@ describe('invitations and registration (integration)', () => {
         sendEmail: true,
       });
 
-      await app.get(OutboxDispatcher).runOnce();
+      // A second ahead: row timestamps come from the database clock.
+      await app.get(OutboxDispatcher).runOnce(new Date(Date.now() + 1000));
 
       const mail = mailbox.find((m) => m.to === email);
       expect(mail?.subject).toBe('Invitation to dMb Projekt 2027');
