@@ -201,9 +201,13 @@ Dane wspólne są w schemacie głównym, a każda struktura platynowa ma własny
 | Encja | Schemat | Najważniejsze pola |
 | --- | --- | --- |
 | Rola | główny | nazwa, poziom w hierarchii |
-| Platyna (rejestr) | główny | numer Partnera, nazwa schematu, kto wypromował, data promocji, rekomendujący Platyny (zadeklarowany numer do późniejszego powiązania) |
+| Platyna (rejestr organizacji) | główny | nazwa schematu, korzeń (konto Platyny), schemat źródłowy (z którego organizację odpięto), kto wypromował, data promocji, rekomendujący Platyny w chwili promocji; organizacje założone linkiem Platyny nie mają schematu źródłowego. Zadeklarowany numer rekomendującego Platyny (spoza organizacji) czeka na rozstrzygnięcie |
+| Konto (katalog) | główny | e-mail, hasło (skrót), schemat organizacji, SuperAdministrator, język, numer Partnera i kraj (unikalne razem) |
+| Sesja | główny | skrót tokenu, konto, ważność, unieważnienie |
+| Skrzynka nadawcza (powiadomienia) | główny | typ wiadomości, adresat, język, dane do szablonu (kasowane po wysłaniu), stan, próby, mailing |
+| Mailing organizacyjny | główny | nadawca, najniższa rola adresatów, temat i treść (PL oraz opcjonalnie DE i EN), liczba adresatów |
 | Zaproszenie (link) | główny | zapraszający, rekomendujący, schemat organizacji, rodzaj (Platyna / Partner), adresat (e-mail lub telefon), termin ważności (72 godz.), wykorzystanie (wygasa z chwilą zapisu konta) |
-| Partner | platynowy | imię, nazwisko, e-mail, telefon (WhatsApp), numer Partnera, kraj numeru, rekomendujący, kto zaprosił (stałe), rola, status (Nieaktywny, Aktywny, GoMagic, DiamondSchool), stan konta (oczekuje na aktywację / aktywne / dezaktywowane), profil uzupełniony (data), usunięte ze struktury (data, kto, rekomendujący w chwili usunięcia), tytuł (pin, tylko u Platyny), weryfikacja (wykonana / pominięta przez Administratora) |
+| Partner | platynowy | imię, nazwisko, e-mail, telefon (WhatsApp), numer Partnera, kraj numeru, rekomendujący, kto zaprosił (stałe), rola, status (Nieaktywny, Aktywny, GoMagic, DiamondSchool), stan konta (oczekuje na aktywację / aktywne / dezaktywowane), profil uzupełniony (data), zgody zaakceptowane (data), usunięte ze struktury (data, kto, rekomendujący w chwili usunięcia), tytuł (pin, tylko u Platyny), weryfikacja (wykonana / pominięta przez Administratora) |
 | Historia ról | platynowy | Partner, rola, data, kto nadał |
 | Materiał | główny | typ, minimalna rola; wersje językowe: język, tytuł, plik |
 | Kontakt | główny | imię, dane kontaktowe, status (Kontakt, Klient, Partner), Partner zapraszający, ostatni Partner BOM, ostatni Partner POM dla każdego rozwiązania (np. MRA), numer Klienta Amway (u Klienta), weryfikacja (wykonana / pominięta przez Administratora), oświadczenie MRA złożone (znacznik, data, Partner) |
@@ -231,7 +235,7 @@ Przed wdrożeniem te ustalenia warto potwierdzić z prawnikiem.
 - [ ] Materiały dodane przez Administratora: widoczne w całej aplikacji (według minimalnej roli), czy tylko w jego dolnej linii?
 - [ ] Zasięg adresatów mailingu marketingowego (Kontakty i Klienci są wspólni ponad strukturami): kogo może zapraszać Platyna, a kogo Administrator?
 - [ ] Weryfikacja e-maila potwierdzeniem linkiem przed wysyłką marketingową (zgody bez weryfikacji adresu są prawnie kruche); do potwierdzenia z prawnikiem.
-- [ ] Domena własna (Vercel, MailerSend: SPF/DKIM) i konfiguracja MailerSend; bez tego nie wyślemy żadnych e-maili.
+- [ ] Plan MailerSend: konto jest zatwierdzone, ale w planie sandbox (100 wiadomości, 10 na minutę); przed realnym startem i większymi mailingami potrzebny płatny plan.
 - [ ] Czy numer rekomendującego Platyny ma własne pole kraju (domyślnie kraj właściciela konta)?- [ ] Kto aktywuje i dezaktywuje samą Platynę: jest korzeniem własnej organizacji, więc raczej nie może zrobić tego sobie; specyfikacja nie rozstrzyga (rekomendacja: SuperAdministrator lub Administrator w górnej linii).
 - [ ] Kanał weryfikacji telefonu (SMS lub WhatsApp): wybór przy budowie, według dostępności i ceny usług.
 - [ ] Z prawnikiem: znacznik oświadczenia MRA, anonimizacja przy żądaniu usunięcia danych, przechowywanie logu bez usuwania.

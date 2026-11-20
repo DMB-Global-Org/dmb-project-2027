@@ -9,19 +9,20 @@ Właściciel produktu: Marek Kustosz. Rozmawiamy po polsku.
 ## Gdzie są wymagania
 
 - `docs/specyfikacja.md`: obowiązująca specyfikacja (role, uprawnienia, konta, Kontakty, mailing, model danych, RODO). Czytaj ją przed każdą większą zmianą.
-- `docs/ustalenia-i-kontekst.md`: dziennik decyzji 1–88 (które są zastąpione i dlaczego).
+- `docs/ustalenia-i-kontekst.md`: dziennik decyzji 1–89 (które są zastąpione i dlaczego).
 - `docs/funkcjonalnosci-2026-10-30.md`: zakres na termin **30.11.2026** (wersja DE obok).
+- `docs/stan-realizacji.md`: co jest zrobione, wycięte i zostało do 30.11. `docs/wdrozenie.md`: środowiska, adresy, zmienne, procedura wdrożenia, test dymny, znane pułapki.
 - Nie zgaduj reguł biznesowych. Gdy specyfikacja milczy albo jest niejasna, zapytaj i zaproponuj dopisanie decyzji do `docs/`.
 
 ## Stos i struktura repozytorium
 
 Monorepo pnpm + Turborepo (`pnpm-workspace.yaml`: `frontend`, `backend`), Node >= 24.
 
-- `backend/`: NestJS 12, GraphQL (Apollo, code-first, schemat zapisywany do `backend/schema.gql`), Drizzle ORM + `postgres` (postgres.js), walidacja env przez zod (`src/config/env.ts`), testy Vitest, lint oxlint. Moduł `notes` to przykład z szablonu; można go usunąć, gdy powstaną właściwe moduły.
-- `frontend/`: Next.js 16 (App Router), React 19, Tailwind 4, shadcn/ui (Base UI), zustand. Przed pisaniem kodu Next.js przeczytaj `frontend/AGENTS.md`.
+- `backend/`: NestJS 12, GraphQL (Apollo, code-first, schemat zapisywany do `backend/schema.gql`), Drizzle ORM + `postgres` (postgres.js), walidacja env przez zod (`src/config/env.ts`), testy Vitest, lint oxlint. Moduły w `src/`: `auth` (logowanie, sesje, guard), `authz` (`can()`), `accounts` (administrowanie kontami, promocja), `invitations` (zaproszenia i rejestracja), `structure` (`RelationLoader`: fakty o drzewie), `org` (schematy organizacji), `audit` (log systemowy), `mail` (skrzynka nadawcza, adapter, szablony), `mailing` (mailing organizacyjny), `db`, `config`.
+- `frontend/`: Next.js 16 (App Router), React 19, Tailwind 4, shadcn/ui (Base UI), next-intl, @tanstack/react-query, next-themes, zod. Przed pisaniem kodu Next.js przeczytaj `frontend/AGENTS.md`. Układ: `src/app/(public)` (logowanie, rejestracja z linku) i `src/app/(app)` (po zalogowaniu), `messages/{pl,de,en}.json`, `src/lib/graphql` (`gql` z przeglądarki przez `/api/graphql`, `serverGql` z Server Components z przekazaniem ciasteczek).
 - Baza: Supabase Postgres. Tabele aplikacji w schemacie `app` (`backend/src/db/schema/app.schema.ts`); nigdy nie zmieniaj schematów Supabase (`auth`, `storage` itd.).
 - Uwierzytelnianie: własne, w backendzie (nie Supabase Auth; decyzja 63). E-mail: MailerSend (decyzja 67) przez skrzynkę nadawczą `app.notifications` (decyzja 83); wiadomości zawsze kolejkuj w transakcji operacji (`OutboxService.enqueue(tx, ...)`), nie wysyłaj bezpośrednio.
-- Wdrożenie: backend na Render (`render.yaml`), frontend na Vercel; migracje uruchamia workflow `.github/workflows/db-migrate.yml` po pushu do `production`. Gałąź `production` jest produkcyjna (Render i Vercel śledzą tylko ją); `main` jest gałęzią integracyjną i niczego nie wdraża.
+- Wdrożenie: backend na Render (`render.yaml`), frontend na Vercel (https://project2027.dmbglobal.pl); szczegóły i zmienne w `docs/wdrozenie.md`; migracje uruchamia workflow `.github/workflows/db-migrate.yml` po pushu do `production`. Gałąź `production` jest produkcyjna (Render i Vercel śledzą tylko ją); `main` jest gałęzią integracyjną i niczego nie wdraża.
 
 ## Komendy (z katalogu głównego)
 
@@ -81,4 +82,8 @@ Każda organizacja platynowa ma własny schemat PostgreSQL tworzony w trakcie dz
 - Zmiany schematu bazy tylko przez Drizzle i `pnpm db:generate`; nie edytuj ręcznie wygenerowanych plików w `backend/drizzle/` ani `backend/drizzle-org/` (ręczny SQL, np. triggery, tylko przez `drizzle-kit generate --custom`).
 - Każda reguła uprawnień i walidacji ma test w Vitest.
 - Każdy resolver GraphQL jest domyślnie chroniony (globalny `AuthGuard`); publiczny wymaga jawnego `@Public()`. O tym, kto co może, decyduje wyłącznie `can()` z `backend/src/authz/` (macierz jako dane); resolvery nie sprawdzają ról ręcznie. API zwraca kody błędów (`appError`), nie teksty.
+- Mutacje drzewa jednej organizacji (zmiana rekomendującego, usunięcie ze struktury, promocja, rejestracja z linku) biorą najpierw blokadę `RelationLoader.lockOrg`, potem blokadę wiersza; błędy z `can()` wychodzą jako `FORBIDDEN` z `reason`, a konto spoza zasięgu jako `NOT_FOUND`.
+- Frontend: żadnych tekstów na sztywno (tylko `messages/*.json`, błędy API jako kody `errors.*` i `reasons.*`); przyciski akcji wynikają z `allowedActions` z backendu, frontend nie powiela macierzy uprawnień. `API_URL` jest zmienną czasu budowania i musi być w `turbo.json`.
+- Migracje muszą być addytywne (kod i migracja nie wchodzą atomowo, decyzja 89). W testach poczty używaj `dispatchUntil` (dispatcher bierze partię po 10 wiadomości).
+- Commity, pushe i podbijanie wersji w `package.json` robi właściciel produktu.
 - Gdy zapada nowa decyzja biznesowa, dopisz ją do `docs/ustalenia-i-kontekst.md` (kolejny numer) i popraw `docs/specyfikacja.md`.
