@@ -157,6 +157,7 @@ type Query {
   myProfile: MyProfile
   recommenderCandidates(id: ID!): [RecommenderCandidate!]!
   structure: [StructureEntry!]!
+  version: String!
   viewer: Viewer
 }
 

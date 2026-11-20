@@ -8,7 +8,8 @@
     "save": "Speichern",
     "cancel": "Abbrechen",
     "logout": "Abmelden",
-    "theme": "Design wechseln"
+    "theme": "Design wechseln",
+    "version": "Version"
   },
   "nav": {
     "accounts": "Struktur",
@@ -219,5 +220,11 @@
     "delivery": "Zustellung",
     "deliveryLine": "gesendet {sent}, in Warteschlange {pending}, Fehler {failed}",
     "empty": "Noch keine Nachrichten gesendet."
+  },
+  "home": {
+    "title": "Willkommen bei dMb Projekt 2027",
+    "signedOut": "Sie sind nicht angemeldet.",
+    "apiDown": "Der Server ist nicht erreichbar.",
+    "login": "Anmelden"
   }
 }
