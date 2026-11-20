@@ -7,18 +7,122 @@
     "loading": "Loading…",
     "save": "Save",
     "cancel": "Cancel",
-    "logout": "Log out"
+    "logout": "Log out",
+    "theme": "Switch theme"
   },
-  "home": {
-    "title": "Welcome to dMb Project 2027",
-    "signedOut": "You are not signed in.",
-    "signedIn": "Signed in as {email}.",
-    "apiDown": "Cannot reach the server.",
-    "apiOk": "The server is running."
+  "nav": {
+    "accounts": "Structure",
+    "invitations": "Invitations",
+    "profile": "My profile"
+  },
+  "roles": {
+    "GENERAL": "General",
+    "FOUNDATION": "Foundation",
+    "BUILDER": "Builder",
+    "SILVER": "Silver",
+    "PLATINUM": "Platinum",
+    "ADMINISTRATOR": "Administrator",
+    "SUPER_ADMINISTRATOR": "SuperAdministrator"
+  },
+  "statuses": {
+    "INACTIVE": "Inactive",
+    "ACTIVE": "Active",
+    "GO_MAGIC": "GoMagic",
+    "DIAMOND_SCHOOL": "DiamondSchool"
+  },
+  "states": {
+    "PENDING_ACTIVATION": "Awaiting activation",
+    "ACTIVE": "Active",
+    "DEACTIVATED": "Deactivated"
+  },
+  "fields": {
+    "email": "E-mail address",
+    "password": "Password",
+    "passwordConfirmation": "Repeat password",
+    "country": "Country",
+    "partnerNumber": "Partner number",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "phone": "Phone (WhatsApp)",
+    "kind": "Account type",
+    "recommenderId": "Sponsor",
+    "recipientEmail": "Recipient e-mail",
+    "recipientPhone": "Recipient phone",
+    "locale": "Invitation language",
+    "token": "Link"
+  },
+  "login": {
+    "title": "Log in",
+    "submit": "Log in"
+  },
+  "register": {
+    "title": "Create your account",
+    "titlePlatinum": "Create your Platinum account",
+    "intro": "Enter your login details and Partner number. You will complete the rest after logging in.",
+    "invalidTitle": "This link is not valid",
+    "invalidText": "This link has expired, was already used or was revoked. Ask the person who invited you for a new one.",
+    "mismatch": "The passwords do not match.",
+    "partnerNumberHint": "6–12 digits",
+    "submit": "Create account"
+  },
+  "profile": {
+    "title": "My profile",
+    "none": "The account {email} has no Partner profile.",
+    "fillIn": "Complete your details and accept the consents. An authorised person will then activate your account.",
+    "waitingActivation": "Your profile is complete. The account is waiting for activation.",
+    "saved": "Saved.",
+    "save": "Save",
+    "phoneHint": "The number you use in WhatsApp",
+    "lockedHint": "Only a SuperAdministrator can change the number",
+    "consents": "I accept the terms and consents."
+  },
+  "accounts": {
+    "title": "Structure",
+    "person": "Person",
+    "partnerNumber": "Partner number",
+    "role": "Role",
+    "status": "Status",
+    "state": "Account state",
+    "profile": "Profile",
+    "profileDone": "Complete",
+    "profileMissing": "To be completed"
+  },
+  "invitations": {
+    "title": "Invitations",
+    "new": "New registration link",
+    "newHint": "Enter the recipient's e-mail or phone. The link is valid for 72 hours and is shown only once.",
+    "kindPartner": "Partner",
+    "kindPlatinum": "Platinum (new organization)",
+    "sendEmail": "Send the link by e-mail",
+    "create": "Create link",
+    "linkTitle": "Registration link",
+    "linkOnce": "Copy it now: it will not be shown again once you leave this page.",
+    "copy": "Copy",
+    "copied": "Copied.",
+    "copyFailed": "Could not copy.",
+    "revoke": "Revoke",
+    "revoked": "Link revoked.",
+    "recipient": "Recipient",
+    "kind": "Type",
+    "created": "Created",
+    "expires": "Valid until",
+    "status": "State",
+    "empty": "No invitations.",
+    "statuses": {
+      "PENDING": "Pending",
+      "USED": "Used",
+      "EXPIRED": "Expired"
+    }
+  },
+  "languages": {
+    "pl": "Polski",
+    "de": "Deutsch",
+    "en": "English"
   },
   "errors": {
     "UNAUTHENTICATED": "Please sign in to continue.",
     "FORBIDDEN": "You are not allowed to do this.",
+    "NOT_FOUND": "Not found.",
     "INVALID_CREDENTIALS": "Incorrect e-mail or password.",
     "ACCOUNT_DEACTIVATED": "This account has been deactivated.",
     "TOO_MANY_ATTEMPTS": "Too many attempts. Please try again later.",
@@ -26,7 +130,9 @@
     "EMAIL_TAKEN": "An account with this e-mail already exists.",
     "PARTNER_NUMBER_TAKEN": "This Partner number is already registered.",
     "VALIDATION_FAILED": "Please check the data you entered.",
+    "VALIDATION_FIELD": "Please check the field: {field}.",
     "NETWORK": "Cannot reach the server. Please try again.",
-    "UNKNOWN": "Something went wrong. Please try again."
+    "UNKNOWN": "Something went wrong. Please try again.",
+    "retry": "Try again"
   }
 }

@@ -8,18 +8,122 @@
     "loading": "Ładowanie…",
     "save": "Zapisz",
     "cancel": "Anuluj",
-    "logout": "Wyloguj"
+    "logout": "Wyloguj",
+    "theme": "Zmień motyw"
   },
-  "home": {
-    "title": "Witaj w dMb Projekt 2027",
-    "signedOut": "Nie jesteś zalogowany.",
-    "signedIn": "Zalogowano jako {email}.",
-    "apiDown": "Brak połączenia z serwerem.",
-    "apiOk": "Serwer działa."
+  "nav": {
+    "accounts": "Struktura",
+    "invitations": "Zaproszenia",
+    "profile": "Mój profil"
+  },
+  "roles": {
+    "GENERAL": "Ogólne",
+    "FOUNDATION": "Foundation",
+    "BUILDER": "Builder",
+    "SILVER": "Silver",
+    "PLATINUM": "Platinum",
+    "ADMINISTRATOR": "Administrator",
+    "SUPER_ADMINISTRATOR": "SuperAdministrator"
+  },
+  "statuses": {
+    "INACTIVE": "Nieaktywny",
+    "ACTIVE": "Aktywny",
+    "GO_MAGIC": "GoMagic",
+    "DIAMOND_SCHOOL": "DiamondSchool"
+  },
+  "states": {
+    "PENDING_ACTIVATION": "Oczekuje na aktywację",
+    "ACTIVE": "Aktywne",
+    "DEACTIVATED": "Dezaktywowane"
+  },
+  "languages": {
+    "pl": "Polski",
+    "de": "Deutsch",
+    "en": "English"
+  },
+  "fields": {
+    "email": "Adres e-mail",
+    "password": "Hasło",
+    "passwordConfirmation": "Powtórz hasło",
+    "country": "Kraj",
+    "partnerNumber": "Numer Partnera",
+    "firstName": "Imię",
+    "lastName": "Nazwisko",
+    "phone": "Telefon (WhatsApp)",
+    "kind": "Rodzaj konta",
+    "recommenderId": "Rekomendujący",
+    "recipientEmail": "E-mail adresata",
+    "recipientPhone": "Telefon adresata",
+    "locale": "Język zaproszenia",
+    "token": "Link"
+  },
+  "login": {
+    "title": "Logowanie",
+    "submit": "Zaloguj"
+  },
+  "register": {
+    "title": "Załóż konto",
+    "titlePlatinum": "Załóż konto Platyny",
+    "intro": "Podaj dane logowania i numer Partnera. Resztę uzupełnisz po zalogowaniu.",
+    "invalidTitle": "Link jest nieważny",
+    "invalidText": "Ten link wygasł, został już wykorzystany albo unieważniony. Poproś osobę, która Cię zaprosiła, o nowy.",
+    "mismatch": "Hasła się różnią.",
+    "partnerNumberHint": "6–12 cyfr",
+    "submit": "Załóż konto"
+  },
+  "profile": {
+    "title": "Mój profil",
+    "none": "Konto {email} nie ma profilu Partnera.",
+    "fillIn": "Uzupełnij dane i zaakceptuj zgody. Konto zostanie aktywowane przez uprawnioną osobę.",
+    "waitingActivation": "Profil jest uzupełniony. Konto czeka na aktywację.",
+    "saved": "Zapisano.",
+    "save": "Zapisz",
+    "phoneHint": "Numer używany w WhatsApp",
+    "lockedHint": "Numer zmienia SuperAdministrator",
+    "consents": "Akceptuję regulamin i zgody."
+  },
+  "accounts": {
+    "title": "Struktura",
+    "person": "Osoba",
+    "partnerNumber": "Numer Partnera",
+    "role": "Rola",
+    "status": "Status",
+    "state": "Stan konta",
+    "profile": "Profil",
+    "profileDone": "Uzupełniony",
+    "profileMissing": "Do uzupełnienia"
+  },
+  "invitations": {
+    "title": "Zaproszenia",
+    "new": "Nowy link rejestracyjny",
+    "newHint": "Podaj adres e-mail lub telefon adresata. Link jest ważny 72 godziny i pokazujemy go tylko raz.",
+    "kindPartner": "Partner",
+    "kindPlatinum": "Platyna (nowa organizacja)",
+    "sendEmail": "Wyślij link e-mailem",
+    "create": "Utwórz link",
+    "linkTitle": "Link rejestracyjny",
+    "linkOnce": "Skopiuj go teraz: po zamknięciu tej strony nie będzie już widoczny.",
+    "copy": "Kopiuj",
+    "copied": "Skopiowano.",
+    "copyFailed": "Nie udało się skopiować.",
+    "revoke": "Unieważnij",
+    "revoked": "Link unieważniony.",
+    "recipient": "Adresat",
+    "kind": "Rodzaj",
+    "created": "Utworzono",
+    "expires": "Ważny do",
+    "status": "Stan",
+    "empty": "Brak zaproszeń.",
+    "statuses": {
+      "PENDING": "Oczekuje",
+      "USED": "Wykorzystane",
+      "EXPIRED": "Wygasłe"
+    }
   },
   "errors": {
     "UNAUTHENTICATED": "Zaloguj się, aby kontynuować.",
     "FORBIDDEN": "Nie masz uprawnień do tej operacji.",
+    "NOT_FOUND": "Nie znaleziono.",
     "INVALID_CREDENTIALS": "Nieprawidłowy e-mail lub hasło.",
     "ACCOUNT_DEACTIVATED": "To konto jest dezaktywowane.",
     "TOO_MANY_ATTEMPTS": "Zbyt wiele prób. Spróbuj ponownie później.",
@@ -27,7 +131,9 @@
     "EMAIL_TAKEN": "Konto z tym adresem e-mail już istnieje.",
     "PARTNER_NUMBER_TAKEN": "Ten numer Partnera jest już zarejestrowany.",
     "VALIDATION_FAILED": "Sprawdź poprawność wprowadzonych danych.",
+    "VALIDATION_FIELD": "Sprawdź pole: {field}.",
     "NETWORK": "Brak połączenia z serwerem. Spróbuj ponownie.",
-    "UNKNOWN": "Coś poszło nie tak. Spróbuj ponownie."
+    "UNKNOWN": "Coś poszło nie tak. Spróbuj ponownie.",
+    "retry": "Spróbuj ponownie"
   }
 }
