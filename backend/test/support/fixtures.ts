@@ -1,8 +1,10 @@
 import { randomUUID } from 'node:crypto';
+import { eq } from 'drizzle-orm';
 import { hashPassword } from '../../src/auth/password.js';
 import { orgTables } from '../../src/db/org/org-tables.js';
 import {
   accounts,
+  orgSchemas,
   type AccountState,
   type Role,
 } from '../../src/db/schema/index.js';
@@ -22,6 +24,26 @@ export function createOrg({ db }: TestDb): Promise<string> {
   return new TxRunner(db).run((tx) => new OrgSchemaService(db).create(tx));
 }
 
+/**
+ * An organization with its Platinum root registered, like a real one after a
+ * Platinum registration (the root's state defaults to ACTIVE).
+ */
+export async function createOrgWithRoot(
+  testDb: TestDb,
+  options: Parameters<typeof createPartner>[2] = {},
+): Promise<{ org: string; root: PartnerFixture }> {
+  const org = await createOrg(testDb);
+  const root = await createPartner(testDb, org, {
+    ...options,
+    role: 'PLATINUM',
+  });
+  await testDb.db
+    .update(orgSchemas)
+    .set({ rootAccountId: root.accountId })
+    .where(eq(orgSchemas.name, org));
+  return { org, root };
+}
+
 export interface PartnerFixture {
   accountId: string;
   email: string;
@@ -38,6 +60,11 @@ export async function createPartner(
     role?: Role;
     state?: AccountState;
     recommenderId?: string;
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    /** Digits; stored with country PL. */
+    partnerNumber?: string;
   } = {},
 ): Promise<PartnerFixture> {
   const email = options.email ?? uniqueEmail();
@@ -48,11 +75,17 @@ export async function createPartner(
       email,
       orgSchema,
       passwordHash: await hashPassword(password, CHEAP_SCRYPT),
+      ...(options.partnerNumber
+        ? { partnerNumber: options.partnerNumber, partnerCountry: 'PL' }
+        : {}),
     })
     .returning({ id: accounts.id });
 
   await db.insert(orgTables(orgSchema).partners).values({
     accountId: account!.id,
+    firstName: options.firstName,
+    lastName: options.lastName,
+    phone: options.phone,
     role: options.role ?? 'GENERAL',
     state: options.state ?? 'ACTIVE',
     recommenderId: options.recommenderId,

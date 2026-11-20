@@ -9,7 +9,7 @@ Właściciel produktu: Marek Kustosz. Rozmawiamy po polsku.
 ## Gdzie są wymagania
 
 - `docs/specyfikacja.md`: obowiązująca specyfikacja (role, uprawnienia, konta, Kontakty, mailing, model danych, RODO). Czytaj ją przed każdą większą zmianą.
-- `docs/ustalenia-i-kontekst.md`: dziennik decyzji 1–84 (które są zastąpione i dlaczego).
+- `docs/ustalenia-i-kontekst.md`: dziennik decyzji 1–85 (które są zastąpione i dlaczego).
 - `docs/funkcjonalnosci-2026-10-30.md`: zakres na termin **30.11.2026** (wersja DE obok).
 - Nie zgaduj reguł biznesowych. Gdy specyfikacja milczy albo jest niejasna, zapytaj i zaproponuj dopisanie decyzji do `docs/`.
 

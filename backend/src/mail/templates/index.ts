@@ -5,10 +5,15 @@ import {
 } from '../../common/locales.js';
 import type { MailMessage } from '../mail.types.js';
 import { type InvitationMailPayload, renderInvitation } from './invitation.js';
+import {
+  type ProfileCompletedMailPayload,
+  renderProfileCompleted,
+} from './profile-completed.js';
 
 /** Template name -> the data it needs. New messages are added here. */
 export interface NotificationPayloads {
   invitation: InvitationMailPayload;
+  profileCompleted: ProfileCompletedMailPayload;
 }
 export type NotificationType = keyof NotificationPayloads;
 
@@ -19,6 +24,7 @@ const RENDERERS: {
   ) => Omit<MailMessage, 'to'>;
 } = {
   invitation: renderInvitation,
+  profileCompleted: renderProfileCompleted,
 };
 
 /** An unknown or unsupported language falls back to Polish (rule 10). */

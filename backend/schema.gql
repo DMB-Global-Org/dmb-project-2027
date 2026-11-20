@@ -2,6 +2,40 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+enum AccountAction {
+  ACTIVATE
+  CHANGE_PARTNER_NUMBER
+  CHANGE_ROLE
+  CHANGE_STATUS
+  DEACTIVATE
+  UPDATE_ACCOUNT
+}
+
+type AccountNode {
+  allowedActions: [AccountAction!]!
+  assignableRoles: [Role!]!
+  createdAt: DateTime!
+  email: String!
+  firstName: String
+  id: ID!
+  isOrgRoot: Boolean!
+  lastName: String
+  partnerCountry: String
+  partnerNumber: String
+  phone: String
+  profileCompleted: Boolean!
+  recommenderId: ID
+  role: Role!
+  state: AccountState!
+  status: PartnerStatus!
+}
+
+enum AccountState {
+  ACTIVE
+  DEACTIVATED
+  PENDING_ACTIVATION
+}
+
 input CreateInvitationInput {
   kind: InvitationKind!
   locale: String
@@ -52,16 +86,52 @@ enum InvitationStatus {
 }
 
 type Mutation {
+  activateAccount(id: ID!): AccountNode!
+  changeAccountRole(id: ID!, role: Role!): AccountNode!
+  changeAccountStatus(id: ID!, status: PartnerStatus!): AccountNode!
   createInvitation(input: CreateInvitationInput!): CreatedInvitation!
+  deactivateAccount(id: ID!): AccountNode!
   login(email: String!, password: String!): Viewer!
   logout: Boolean!
   register(input: RegisterInput!): Viewer!
+  revokeInvitation(id: ID!): Invitation!
+  updateAccountData(id: ID!, input: UpdateAccountDataInput!): AccountNode!
+  updateMyProfile(input: UpdateProfileInput!): MyProfile!
+  updatePartnerNumber(id: ID!, input: PartnerNumberInput!): AccountNode!
+}
+
+type MyProfile {
+  consentsAcceptedAt: DateTime
+  email: String!
+  firstName: String
+  id: ID!
+  lastName: String
+  partnerCountry: String
+  partnerNumber: String
+  phone: String
+  profileCompletedAt: DateTime
+  state: AccountState!
+}
+
+input PartnerNumberInput {
+  country: String
+  partnerNumber: String!
+}
+
+enum PartnerStatus {
+  ACTIVE
+  DIAMOND_SCHOOL
+  GO_MAGIC
+  INACTIVE
 }
 
 type Query {
+  account(id: ID!): AccountNode
   health: String!
   invitation(token: String!): InvitationPreview
   myInvitations: [Invitation!]!
+  myProfile: MyProfile
+  structure: [StructureEntry!]!
   viewer: Viewer
 }
 
@@ -72,6 +142,34 @@ input RegisterInput {
   password: String!
   passwordConfirmation: String!
   token: String!
+}
+
+enum Role {
+  ADMINISTRATOR
+  BUILDER
+  FOUNDATION
+  GENERAL
+  PLATINUM
+  SILVER
+  SUPER_ADMINISTRATOR
+}
+
+type StructureEntry {
+  account: AccountNode!
+  depth: Int!
+}
+
+input UpdateAccountDataInput {
+  firstName: String
+  lastName: String
+  phone: String
+}
+
+input UpdateProfileInput {
+  acceptConsents: Boolean
+  firstName: String
+  lastName: String
+  phone: String
 }
 
 type Viewer {

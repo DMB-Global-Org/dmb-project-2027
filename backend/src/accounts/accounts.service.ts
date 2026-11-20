@@ -1,0 +1,608 @@
+import { Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { asc, eq, inArray } from 'drizzle-orm';
+import { AuditService } from '../audit/audit.service.js';
+import type { AuthContext, RequestMeta } from '../auth/auth.types.js';
+import { SessionService } from '../auth/session.service.js';
+import { can } from '../authz/can.js';
+import type { Actor, Decision, TargetFacts } from '../authz/types.js';
+import { appError } from '../common/graphql-error.js';
+import type { Env } from '../config/env.js';
+import { DB, type Database } from '../db/database.tokens.js';
+import { orgTables } from '../db/org/org-tables.js';
+import {
+  pgConstraintName,
+  pgErrorCode,
+  PG_UNIQUE_VIOLATION,
+} from '../db/pg-error.js';
+import {
+  accounts,
+  orgSchemas,
+  ROLES,
+  type PartnerStatus,
+  type Role,
+} from '../db/schema/index.js';
+import { TxRunner, type Tx } from '../db/tx-runner.js';
+import { OutboxService } from '../mail/outbox.service.js';
+import {
+  RelationLoader,
+  type LoadedTarget,
+  type PartnerRow,
+} from '../structure/relation-loader.js';
+import {
+  ACCOUNT_ACTIONS,
+  type AccountAction,
+  type AccountNode,
+  type MyProfile,
+  type StructureEntry,
+} from './account.models.js';
+import type {
+  PartnerNumberChange,
+  UpdateAccountData,
+  UpdateProfile,
+} from './account.schemas.js';
+
+function assertAllowed(decision: Decision): void {
+  if (!decision.allowed) {
+    throw appError('FORBIDDEN', { reason: decision.reason });
+  }
+}
+
+interface AccountRow {
+  partner: PartnerRow;
+  email: string;
+  partnerNumber: string | null;
+  partnerCountry: string | null;
+}
+
+const fullName = (first: string | null, last: string | null): string =>
+  [first, last].filter(Boolean).join(' ');
+
+@Injectable()
+export class AccountsService {
+  constructor(
+    @Inject(DB) private readonly db: Database,
+    private readonly tx: TxRunner,
+    private readonly relations: RelationLoader,
+    private readonly audit: AuditService,
+    private readonly outbox: OutboxService,
+    private readonly sessions: SessionService,
+    private readonly config: ConfigService<Env, true>,
+  ) {}
+
+  // ------------------------------------------------------------- queries
+
+  /**
+   * The structure the caller sees: themselves and everybody in their downline,
+   * parents before children. A SuperAdministrator sees every organization.
+   */
+  async structure(auth: AuthContext): Promise<StructureEntry[]> {
+    assertAllowed(can(auth.actor, { action: 'VIEW_STRUCTURE' }));
+
+    const roots: { orgSchema: string; rootId: string }[] = [];
+    if (auth.actor.role === 'SUPER_ADMINISTRATOR') {
+      const registry = await this.db
+        .select()
+        .from(orgSchemas)
+        .orderBy(asc(orgSchemas.createdAt));
+      for (const org of registry) {
+        if (org.rootAccountId) {
+          roots.push({ orgSchema: org.name, rootId: org.rootAccountId });
+        }
+      }
+    } else if (auth.orgSchema) {
+      roots.push({ orgSchema: auth.orgSchema, rootId: auth.accountId });
+    }
+
+    const entries: StructureEntry[] = [];
+    for (const { orgSchema, rootId } of roots) {
+      const downline = await this.relations.downline(orgSchema, rootId);
+      if (downline.length === 0) continue;
+      const rows = await this.rowsOf(
+        orgSchema,
+        downline.map((entry) => entry.accountId),
+      );
+      const orgRootId = await this.orgRootId(orgSchema);
+      for (const { accountId, depth } of downline) {
+        const row = rows.get(accountId);
+        if (!row) continue;
+        const isSelf = accountId === auth.accountId;
+        const superAdmin = auth.actor.role === 'SUPER_ADMINISTRATOR';
+        const facts: TargetFacts = {
+          role: row.partner.role,
+          state: row.partner.state,
+          removed: false,
+          isSelf,
+          sameOrg: !superAdmin,
+          // Everybody in the downline is below the caller by construction.
+          actorIsAncestor: !superAdmin && !isSelf,
+          isOrgRoot: accountId === orgRootId,
+          actorIsAboveOrg: false,
+        };
+        entries.push({ depth, account: this.describe(auth.actor, facts, row) });
+      }
+    }
+    return entries;
+  }
+
+  /** One account, or null when it does not exist or the caller may not see it. */
+  async view(
+    auth: AuthContext,
+    accountId: string,
+  ): Promise<AccountNode | null> {
+    assertAllowed(can(auth.actor, { action: 'VIEW_STRUCTURE' }));
+    const loaded = await this.relations.targetFacts(auth, accountId);
+    if (!loaded || !this.visible(auth, loaded)) return null;
+    const row = await this.rowOf(loaded.orgSchema, accountId);
+    return row ? this.describe(auth.actor, loaded.facts, row) : null;
+  }
+
+  async myProfile(auth: AuthContext): Promise<MyProfile | null> {
+    if (!auth.orgSchema) return null;
+    const row = await this.rowOf(auth.orgSchema, auth.accountId);
+    if (!row) return null;
+    return {
+      id: auth.accountId,
+      email: row.email,
+      firstName: row.partner.firstName,
+      lastName: row.partner.lastName,
+      phone: row.partner.phone,
+      partnerNumber: row.partnerNumber,
+      partnerCountry: row.partnerCountry,
+      state: row.partner.state,
+      profileCompletedAt: row.partner.profileCompletedAt,
+      consentsAcceptedAt: row.partner.consentsAcceptedAt,
+    };
+  }
+
+  // ----------------------------------------------------------- mutations
+
+  activate(auth: AuthContext, id: string, meta: RequestMeta) {
+    return this.changeState(auth, id, 'ACTIVE', meta);
+  }
+
+  deactivate(auth: AuthContext, id: string, meta: RequestMeta) {
+    return this.changeState(auth, id, 'DEACTIVATED', meta);
+  }
+
+  private async changeState(
+    auth: AuthContext,
+    id: string,
+    state: 'ACTIVE' | 'DEACTIVATED',
+    meta: RequestMeta,
+  ): Promise<AccountNode> {
+    await this.tx.run(async (tx) => {
+      const target = await this.lockTarget(auth, id, tx);
+      assertAllowed(
+        can(auth.actor, {
+          action: state === 'ACTIVE' ? 'ACTIVATE' : 'DEACTIVATE',
+          target: target.facts,
+        }),
+      );
+      const { partners } = orgTables(target.orgSchema);
+      await tx
+        .update(partners)
+        .set({ state })
+        .where(eq(partners.accountId, id));
+      // Deactivation cuts the person off at once, in the same transaction.
+      if (state === 'DEACTIVATED') await this.sessions.revokeAllFor(id, tx);
+
+      await this.audit.record(tx, {
+        actorAccountId: auth.accountId,
+        action: state === 'ACTIVE' ? 'account.activate' : 'account.deactivate',
+        objectType: 'account',
+        objectId: id,
+        subjectAccountId: id,
+        before: { state: target.partner.state },
+        after: { state },
+        meta,
+      });
+    });
+    return this.viewAfterChange(auth, id);
+  }
+
+  async changeRole(
+    auth: AuthContext,
+    id: string,
+    newRole: Role,
+    meta: RequestMeta,
+  ): Promise<AccountNode> {
+    await this.tx.run(async (tx) => {
+      const target = await this.lockTarget(auth, id, tx);
+      assertAllowed(
+        can(auth.actor, {
+          action: 'CHANGE_ROLE',
+          target: target.facts,
+          newRole,
+        }),
+      );
+      if (target.partner.role === newRole) return;
+
+      const { partners, roleHistory } = orgTables(target.orgSchema);
+      await tx
+        .update(partners)
+        .set({ role: newRole })
+        .where(eq(partners.accountId, id));
+      await tx
+        .insert(roleHistory)
+        .values({ accountId: id, role: newRole, changedBy: auth.accountId });
+      await this.audit.record(tx, {
+        actorAccountId: auth.accountId,
+        action: 'account.role.change',
+        objectType: 'account',
+        objectId: id,
+        subjectAccountId: id,
+        before: { role: target.partner.role },
+        after: { role: newRole },
+        meta,
+      });
+    });
+    return this.viewAfterChange(auth, id);
+  }
+
+  async changeStatus(
+    auth: AuthContext,
+    id: string,
+    status: PartnerStatus,
+    meta: RequestMeta,
+  ): Promise<AccountNode> {
+    await this.tx.run(async (tx) => {
+      const target = await this.lockTarget(auth, id, tx);
+      assertAllowed(
+        can(auth.actor, { action: 'CHANGE_STATUS', target: target.facts }),
+      );
+      if (target.partner.status === status) return;
+
+      const { partners } = orgTables(target.orgSchema);
+      await tx
+        .update(partners)
+        .set({ status })
+        .where(eq(partners.accountId, id));
+      await this.audit.record(tx, {
+        actorAccountId: auth.accountId,
+        action: 'account.status.change',
+        objectType: 'account',
+        objectId: id,
+        subjectAccountId: id,
+        before: { status: target.partner.status },
+        after: { status },
+        meta,
+      });
+    });
+    return this.viewAfterChange(auth, id);
+  }
+
+  /**
+   * The owner fills in their profile (also while awaiting activation). Once
+   * name, phone and consents are all there, the profile counts as completed and
+   * the person who may activate the account is told, once (decision 85).
+   */
+  async updateOwnProfile(
+    auth: AuthContext,
+    input: UpdateProfile,
+    meta: RequestMeta,
+    now = new Date(),
+  ): Promise<MyProfile> {
+    assertAllowed(can(auth.actor, { action: 'UPDATE_OWN_PROFILE' }));
+    // A SuperAdministrator has no Partner profile.
+    if (!auth.orgSchema) {
+      throw appError('FORBIDDEN', { reason: 'insufficient_role' });
+    }
+    const orgSchema = auth.orgSchema;
+
+    await this.tx.run(async (tx) => {
+      const { partners } = orgTables(orgSchema);
+      const [current] = await tx
+        .select()
+        .from(partners)
+        .where(eq(partners.accountId, auth.accountId))
+        .for('update');
+      if (!current) throw appError('NOT_FOUND');
+
+      const firstName = input.firstName ?? current.firstName;
+      const lastName = input.lastName ?? current.lastName;
+      const phone = input.phone ?? current.phone;
+      const consentsAcceptedAt =
+        current.consentsAcceptedAt ?? (input.acceptConsents ? now : null);
+      const complete = Boolean(
+        firstName && lastName && phone && consentsAcceptedAt,
+      );
+      const completesNow = complete && !current.profileCompletedAt;
+
+      await tx
+        .update(partners)
+        .set({
+          firstName,
+          lastName,
+          phone,
+          consentsAcceptedAt,
+          profileCompletedAt: completesNow ? now : current.profileCompletedAt,
+        })
+        .where(eq(partners.accountId, auth.accountId));
+
+      await this.audit.record(tx, {
+        actorAccountId: auth.accountId,
+        action: 'account.profile.update',
+        objectType: 'account',
+        objectId: auth.accountId,
+        subjectAccountId: auth.accountId,
+        before: {
+          firstName: current.firstName,
+          lastName: current.lastName,
+          phone: current.phone,
+          consentsAcceptedAt: current.consentsAcceptedAt,
+          profileCompletedAt: current.profileCompletedAt,
+        },
+        after: {
+          firstName,
+          lastName,
+          phone,
+          consentsAcceptedAt,
+          profileCompletedAt: completesNow ? now : current.profileCompletedAt,
+        },
+        meta,
+      });
+
+      if (completesNow) {
+        await this.notifyProfileCompleted(
+          tx,
+          auth,
+          fullName(firstName, lastName),
+        );
+      }
+    });
+
+    const profile = await this.myProfile(auth);
+    if (!profile) throw appError('NOT_FOUND');
+    return profile;
+  }
+
+  /** Name and phone of somebody else's account (decision 85). */
+  async updateAccountData(
+    auth: AuthContext,
+    id: string,
+    input: UpdateAccountData,
+    meta: RequestMeta,
+  ): Promise<AccountNode> {
+    await this.tx.run(async (tx) => {
+      const target = await this.lockTarget(auth, id, tx);
+      assertAllowed(
+        can(auth.actor, { action: 'UPDATE_ACCOUNT', target: target.facts }),
+      );
+      const changes = {
+        firstName: input.firstName ?? target.partner.firstName,
+        lastName: input.lastName ?? target.partner.lastName,
+        phone: input.phone ?? target.partner.phone,
+      };
+      const { partners } = orgTables(target.orgSchema);
+      await tx.update(partners).set(changes).where(eq(partners.accountId, id));
+      await this.audit.record(tx, {
+        actorAccountId: auth.accountId,
+        action: 'account.update',
+        objectType: 'account',
+        objectId: id,
+        subjectAccountId: id,
+        before: {
+          firstName: target.partner.firstName,
+          lastName: target.partner.lastName,
+          phone: target.partner.phone,
+        },
+        after: changes,
+        meta,
+      });
+    });
+    return this.viewAfterChange(auth, id);
+  }
+
+  /** The number stays reserved and unique, so only a SuperAdministrator edits it. */
+  async updatePartnerNumber(
+    auth: AuthContext,
+    id: string,
+    input: PartnerNumberChange,
+    meta: RequestMeta,
+  ): Promise<AccountNode> {
+    await this.tx.run(async (tx) => {
+      const target = await this.lockTarget(auth, id, tx);
+      assertAllowed(
+        can(auth.actor, {
+          action: 'CHANGE_PARTNER_NUMBER',
+          target: target.facts,
+        }),
+      );
+      const [before] = await tx
+        .select({
+          partnerNumber: accounts.partnerNumber,
+          partnerCountry: accounts.partnerCountry,
+        })
+        .from(accounts)
+        .where(eq(accounts.id, id));
+      try {
+        await tx
+          .update(accounts)
+          .set({
+            partnerNumber: input.partnerNumber,
+            partnerCountry: input.country,
+          })
+          .where(eq(accounts.id, id));
+      } catch (error) {
+        if (
+          pgErrorCode(error) === PG_UNIQUE_VIOLATION &&
+          pgConstraintName(error) === 'accounts_partner_number_key'
+        ) {
+          throw appError('PARTNER_NUMBER_TAKEN');
+        }
+        throw error;
+      }
+      await this.audit.record(tx, {
+        actorAccountId: auth.accountId,
+        action: 'account.partner_number.change',
+        objectType: 'account',
+        objectId: id,
+        subjectAccountId: id,
+        before,
+        after: {
+          partnerNumber: input.partnerNumber,
+          partnerCountry: input.country,
+        },
+        meta,
+      });
+    });
+    return this.viewAfterChange(auth, id);
+  }
+
+  // ------------------------------------------------------------- helpers
+
+  /**
+   * The target of a change, its row locked until the transaction ends. An
+   * account the caller may not see looks exactly like one that does not exist.
+   */
+  private async lockTarget(
+    auth: AuthContext,
+    id: string,
+    tx: Tx,
+  ): Promise<LoadedTarget> {
+    const loaded = await this.relations.targetFacts(auth, id, tx, {
+      lock: true,
+    });
+    if (!loaded || !this.visible(auth, loaded)) throw appError('NOT_FOUND');
+    return loaded;
+  }
+
+  /** Visible: oneself, the downline, or anybody for a SuperAdministrator. */
+  private visible(auth: AuthContext, loaded: LoadedTarget): boolean {
+    return (
+      auth.actor.role === 'SUPER_ADMINISTRATOR' ||
+      loaded.facts.isSelf ||
+      loaded.facts.actorIsAncestor
+    );
+  }
+
+  private async viewAfterChange(
+    auth: AuthContext,
+    id: string,
+  ): Promise<AccountNode> {
+    const node = await this.view(auth, id);
+    // Not reachable: the caller saw the account a moment ago.
+    if (!node) throw appError('NOT_FOUND');
+    return node;
+  }
+
+  /**
+   * Who is told that a profile is complete: the Platinum at the head of the
+   * organization, or every SuperAdministrator when that is the account itself
+   * or the Platinum cannot act (decision 85).
+   */
+  private async notifyProfileCompleted(
+    tx: Tx,
+    auth: AuthContext,
+    accountName: string,
+  ): Promise<void> {
+    const rootId = await this.orgRootId(auth.orgSchema!, tx);
+    let recipients: { email: string; locale: string }[] = [];
+
+    if (rootId && rootId !== auth.accountId) {
+      const { partners } = orgTables(auth.orgSchema!);
+      const [root] = await tx
+        .select({
+          email: accounts.email,
+          locale: accounts.locale,
+          state: partners.state,
+        })
+        .from(partners)
+        .innerJoin(accounts, eq(accounts.id, partners.accountId))
+        .where(eq(partners.accountId, rootId));
+      if (root?.state === 'ACTIVE') recipients = [root];
+    }
+    if (recipients.length === 0) {
+      recipients = await tx
+        .select({ email: accounts.email, locale: accounts.locale })
+        .from(accounts)
+        .where(eq(accounts.isSuperAdmin, true));
+    }
+
+    const url = `${this.config.get('APP_BASE_URL', { infer: true })}/accounts/${auth.accountId}`;
+    for (const recipient of recipients) {
+      await this.outbox.enqueue(tx, {
+        type: 'profileCompleted',
+        recipientEmail: recipient.email,
+        locale: recipient.locale,
+        payload: { accountName, url },
+      });
+    }
+  }
+
+  private async orgRootId(
+    orgSchema: string,
+    executor: Database | Tx = this.db,
+  ): Promise<string | null> {
+    const [org] = await executor
+      .select({ rootAccountId: orgSchemas.rootAccountId })
+      .from(orgSchemas)
+      .where(eq(orgSchemas.name, orgSchema));
+    return org?.rootAccountId ?? null;
+  }
+
+  private async rowsOf(
+    orgSchema: string,
+    ids: string[],
+  ): Promise<Map<string, AccountRow>> {
+    const { partners } = orgTables(orgSchema);
+    const rows = await this.db
+      .select({
+        partner: partners,
+        email: accounts.email,
+        partnerNumber: accounts.partnerNumber,
+        partnerCountry: accounts.partnerCountry,
+      })
+      .from(partners)
+      .innerJoin(accounts, eq(accounts.id, partners.accountId))
+      .where(inArray(partners.accountId, ids));
+    return new Map(rows.map((row) => [row.partner.accountId, row]));
+  }
+
+  private async rowOf(
+    orgSchema: string,
+    id: string,
+  ): Promise<AccountRow | undefined> {
+    return (await this.rowsOf(orgSchema, [id])).get(id);
+  }
+
+  /** The account as the caller sees it, with what they may do (decided by `can`). */
+  private describe(
+    actor: Actor,
+    facts: TargetFacts,
+    row: AccountRow,
+  ): AccountNode {
+    const assignableRoles = ROLES.filter(
+      (role) =>
+        role !== facts.role &&
+        can(actor, { action: 'CHANGE_ROLE', target: facts, newRole: role })
+          .allowed,
+    );
+    const allowedActions = ACCOUNT_ACTIONS.filter(
+      (action): action is AccountAction => {
+        if (action === 'CHANGE_ROLE') return assignableRoles.length > 0;
+        return can(actor, { action, target: facts }).allowed;
+      },
+    );
+    const { partner } = row;
+    return {
+      id: partner.accountId,
+      email: row.email,
+      firstName: partner.firstName,
+      lastName: partner.lastName,
+      phone: partner.phone,
+      partnerNumber: row.partnerNumber,
+      partnerCountry: row.partnerCountry,
+      role: partner.role,
+      status: partner.status,
+      state: partner.state,
+      profileCompleted: partner.profileCompletedAt !== null,
+      recommenderId: partner.recommenderId,
+      isOrgRoot: facts.isOrgRoot,
+      createdAt: partner.createdAt,
+      allowedActions,
+      assignableRoles,
+    };
+  }
+}

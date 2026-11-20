@@ -59,6 +59,10 @@ export type Action =
   | 'REMOVE_FROM_STRUCTURE'
   | 'SEND_ORG_MAILING'
   | 'VIEW_AUDIT'
+  | 'VIEW_STRUCTURE'
+  | 'UPDATE_ACCOUNT'
+  | 'CHANGE_PARTNER_NUMBER'
+  | 'REVOKE_INVITATION'
   | 'UPDATE_OWN_PROFILE';
 
 export type Request =
@@ -71,7 +75,9 @@ export type Request =
         | 'CHANGE_STATUS'
         | 'PROMOTE'
         | 'REMOVE_FROM_STRUCTURE'
-        | 'VIEW_AUDIT';
+        | 'VIEW_AUDIT'
+        | 'UPDATE_ACCOUNT'
+        | 'CHANGE_PARTNER_NUMBER';
       target: TargetFacts;
     }
   | { action: 'CHANGE_ROLE'; target: TargetFacts; newRole: Role }
@@ -81,6 +87,9 @@ export type Request =
       newRecommender: NewRecommenderFacts;
     }
   | { action: 'SEND_ORG_MAILING' }
+  | { action: 'VIEW_STRUCTURE' }
+  // The actor is the account that created the invitation.
+  | { action: 'REVOKE_INVITATION'; isInviter: boolean }
   | { action: 'UPDATE_OWN_PROFILE' };
 
 /** Machine-readable denial reasons; the frontend maps them to texts. */

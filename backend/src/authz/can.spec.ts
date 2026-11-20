@@ -245,6 +245,10 @@ describe('actor state', () => {
     { action: 'REMOVE_FROM_STRUCTURE', target: downlineTarget() },
     { action: 'SEND_ORG_MAILING' },
     { action: 'VIEW_AUDIT', target: downlineTarget() },
+    { action: 'VIEW_STRUCTURE' },
+    { action: 'UPDATE_ACCOUNT', target: downlineTarget() },
+    { action: 'CHANGE_PARTNER_NUMBER', target: downlineTarget() },
+    { action: 'REVOKE_INVITATION', isInviter: true },
   ];
 
   it.each(allActions)(
@@ -297,6 +301,9 @@ describe('nobody acts on themselves', () => {
     { action: 'CHANGE_STATUS', target: self },
     { action: 'PROMOTE', target: self },
     { action: 'REMOVE_FROM_STRUCTURE', target: self },
+    // Own data goes through UPDATE_OWN_PROFILE.
+    { action: 'UPDATE_ACCOUNT', target: self },
+    { action: 'CHANGE_PARTNER_NUMBER', target: self },
     {
       action: 'CHANGE_RECOMMENDER',
       target: self,
@@ -745,6 +752,69 @@ describe('mailing and audit log', () => {
   });
 });
 
+describe('account data and structure view (decision 85)', () => {
+  const update = (role: Role, t: TargetFacts) =>
+    can(actorOf(role), { action: 'UPDATE_ACCOUNT', target: t });
+
+  it('name and phone of another account: Platinum in the organization, Administrator in the downline, SuperAdministrator everywhere', () => {
+    expect(ok(update('PLATINUM', downlineTarget()))).toBe(true);
+    expect(ok(update('PLATINUM', outsideTarget()))).toBe(false);
+    expect(ok(update('ADMINISTRATOR', downlineTarget()))).toBe(true);
+    expect(ok(update('ADMINISTRATOR', outsideTarget({ sameOrg: true })))).toBe(
+      false,
+    );
+    expect(ok(update('SUPER_ADMINISTRATOR', outsideTarget()))).toBe(true);
+  });
+
+  it.each(LOW_ROLES)('%s cannot edit anybody else', (role) => {
+    expect(reasonOf(update(role, downlineTarget()))).toBe('insufficient_role');
+  });
+
+  it('a removed account cannot be edited', () => {
+    expect(
+      reasonOf(update('SUPER_ADMINISTRATOR', outsideTarget({ removed: true }))),
+    ).toBe('target_removed');
+  });
+
+  it('the root of an organization is edited only from above it', () => {
+    expect(ok(update('PLATINUM', rootBelow()))).toBe(false);
+    expect(ok(update('ADMINISTRATOR', rootBelow()))).toBe(true);
+    expect(
+      ok(update('ADMINISTRATOR', rootBelow({ actorIsAboveOrg: false }))),
+    ).toBe(false);
+    expect(ok(update('SUPER_ADMINISTRATOR', rootBelow()))).toBe(true);
+  });
+
+  it('the Partner number is edited only by a SuperAdministrator', () => {
+    for (const role of ROLES) {
+      expect(
+        ok(
+          can(actorOf(role), {
+            action: 'CHANGE_PARTNER_NUMBER',
+            target: downlineTarget(),
+          }),
+        ),
+      ).toBe(role === 'SUPER_ADMINISTRATOR');
+    }
+  });
+
+  it('every active account may view the structure below it', () => {
+    for (const role of ROLES) {
+      expect(ok(can(actorOf(role), { action: 'VIEW_STRUCTURE' }))).toBe(true);
+    }
+  });
+
+  it('an invitation is revoked by its author or a SuperAdministrator', () => {
+    const revoke = (role: Role, isInviter: boolean) =>
+      can(actorOf(role), { action: 'REVOKE_INVITATION', isInviter });
+    for (const role of ROLES) {
+      expect(ok(revoke(role, true))).toBe(true);
+      expect(ok(revoke(role, false))).toBe(role === 'SUPER_ADMINISTRATOR');
+    }
+    expect(reasonOf(revoke('ADMINISTRATOR', false))).toBe('not_in_scope');
+  });
+});
+
 // Adding an action without deciding who may do it must break this test.
 describe('completeness', () => {
   it('every action is decided for every role', () => {
@@ -774,6 +844,13 @@ describe('completeness', () => {
       },
       SEND_ORG_MAILING: { action: 'SEND_ORG_MAILING' },
       VIEW_AUDIT: { action: 'VIEW_AUDIT', target: downlineTarget() },
+      VIEW_STRUCTURE: { action: 'VIEW_STRUCTURE' },
+      UPDATE_ACCOUNT: { action: 'UPDATE_ACCOUNT', target: downlineTarget() },
+      CHANGE_PARTNER_NUMBER: {
+        action: 'CHANGE_PARTNER_NUMBER',
+        target: downlineTarget(),
+      },
+      REVOKE_INVITATION: { action: 'REVOKE_INVITATION', isInviter: true },
       UPDATE_OWN_PROFILE: { action: 'UPDATE_OWN_PROFILE' },
     };
 

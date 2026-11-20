@@ -4,6 +4,7 @@ import request from 'supertest';
 import {
   type Agent,
   createTestApp,
+  dispatchUntil,
   errorOf,
   gql,
 } from '../../test/support/app.js';
@@ -24,7 +25,6 @@ import {
   orgSchemas,
 } from '../db/schema/index.js';
 import type { MailMessage } from '../mail/mail.types.js';
-import { OutboxDispatcher } from '../mail/outbox-dispatcher.js';
 import { hashInvitationToken } from './invitation-token.js';
 
 const CREATE = `mutation ($input: CreateInvitationInput!) {
@@ -823,8 +823,7 @@ describe('invitations and registration (integration)', () => {
         sendEmail: true,
       });
 
-      // A second ahead: row timestamps come from the database clock.
-      await app.get(OutboxDispatcher).runOnce(new Date(Date.now() + 1000));
+      await dispatchUntil(app, () => mailbox.some((m) => m.to === email));
 
       const mail = mailbox.find((m) => m.to === email);
       expect(mail?.subject).toBe('Invitation to dMb Projekt 2027');

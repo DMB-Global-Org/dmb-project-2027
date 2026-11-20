@@ -6,12 +6,15 @@ export interface InvitationMailPayload {
   kind: 'PARTNER' | 'PLATINUM';
   /** ISO timestamp. */
   expiresAt: string;
+  /** Name of the person who invites; left out when they have not given one. */
+  inviterName?: string;
 }
 
 interface Texts {
   subject: string;
   greeting: string;
   body: (kind: InvitationMailPayload['kind']) => string;
+  invitedBy: (name: string) => string;
   action: string;
   validUntil: (when: string) => string;
   ignore: string;
@@ -25,6 +28,7 @@ const TEXTS: Record<Locale, Texts> = {
       kind === 'PLATINUM'
         ? 'zapraszamy Cię do założenia konta Platyny w aplikacji dMb Projekt 2027.'
         : 'zapraszamy Cię do założenia konta w aplikacji dMb Projekt 2027.',
+    invitedBy: (name) => `Zaprasza Cię: ${name}.`,
     action: 'Załóż konto',
     validUntil: (when) => `Link jest ważny do ${when}.`,
     ignore: 'Jeśli to zaproszenie nie jest dla Ciebie, zignoruj tę wiadomość.',
@@ -36,6 +40,7 @@ const TEXTS: Record<Locale, Texts> = {
       kind === 'PLATINUM'
         ? 'wir laden Sie ein, in der Anwendung dMb Projekt 2027 ein Platin-Konto anzulegen.'
         : 'wir laden Sie ein, in der Anwendung dMb Projekt 2027 ein Konto anzulegen.',
+    invitedBy: (name) => `Eingeladen von: ${name}.`,
     action: 'Konto anlegen',
     validUntil: (when) => `Der Link ist gültig bis ${when}.`,
     ignore:
@@ -48,6 +53,7 @@ const TEXTS: Record<Locale, Texts> = {
       kind === 'PLATINUM'
         ? 'you are invited to create a Platinum account in the dMb Projekt 2027 application.'
         : 'you are invited to create an account in the dMb Projekt 2027 application.',
+    invitedBy: (name) => `Invited by: ${name}.`,
     action: 'Create account',
     validUntil: (when) => `The link is valid until ${when}.`,
     ignore:
@@ -88,6 +94,7 @@ export function renderInvitation(
     t.greeting,
     '',
     t.body(payload.kind),
+    ...(payload.inviterName ? [t.invitedBy(payload.inviterName)] : []),
     '',
     `${t.action}: ${payload.url}`,
     '',
@@ -97,7 +104,11 @@ export function renderInvitation(
   const url = escapeHtml(payload.url);
   const html = [
     `<p>${t.greeting}</p>`,
-    `<p>${escapeHtml(t.body(payload.kind))}</p>`,
+    `<p>${escapeHtml(t.body(payload.kind))}${
+      payload.inviterName
+        ? `<br>${escapeHtml(t.invitedBy(payload.inviterName))}`
+        : ''
+    }</p>`,
     `<p><a href="${url}">${escapeHtml(t.action)}</a></p>`,
     `<p>${escapeHtml(t.validUntil(when))}<br>${escapeHtml(t.ignore)}</p>`,
   ].join('\n');

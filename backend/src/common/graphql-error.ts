@@ -12,6 +12,8 @@ export type ErrorCode =
   | 'VALIDATION_FAILED'
   // The permission engine said no; `reason` carries its DenyReason.
   | 'FORBIDDEN'
+  // Unknown, or outside what the caller may see (the two look the same).
+  | 'NOT_FOUND'
   // Unknown, expired, already used, or its inviter can no longer invite.
   | 'INVITATION_INVALID'
   | 'EMAIL_TAKEN'

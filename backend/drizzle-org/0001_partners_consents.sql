@@ -1,0 +1,1 @@
+ALTER TABLE "org_template"."partners" ADD COLUMN "consents_accepted_at" timestamp with time zone;

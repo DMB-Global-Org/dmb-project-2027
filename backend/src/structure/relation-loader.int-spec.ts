@@ -5,6 +5,9 @@ import {
 } from '../../test/support/fixtures.js';
 import { createTestDb, type TestDb } from '../../test/support/test-db.js';
 import type { AuthContext } from '../auth/auth.types.js';
+import { eq } from 'drizzle-orm';
+import { orgTables } from '../db/org/org-tables.js';
+import { orgSchemas } from '../db/schema/index.js';
 import { RelationLoader } from './relation-loader.js';
 
 describe('RelationLoader (integration)', () => {
@@ -122,6 +125,140 @@ describe('RelationLoader (integration)', () => {
           superAdmin.accountId,
         ),
       ).toBeNull();
+    });
+  });
+
+  describe('targetFacts', () => {
+    let tOrg: string;
+    let tRoot: string, tA: string, tB: string, tC: string;
+
+    beforeAll(async () => {
+      tOrg = await createOrg(testDb);
+      tRoot = (await createPartner(testDb, tOrg, { role: 'PLATINUM' }))
+        .accountId;
+      tA = (await createPartner(testDb, tOrg, { recommenderId: tRoot }))
+        .accountId;
+      tB = (await createPartner(testDb, tOrg, { recommenderId: tA })).accountId;
+      tC = (
+        await createPartner(testDb, tOrg, {
+          recommenderId: tRoot,
+          state: 'PENDING_ACTIVATION',
+        })
+      ).accountId;
+      await testDb.db
+        .update(orgSchemas)
+        .set({ rootAccountId: tRoot })
+        .where(eq(orgSchemas.name, tOrg));
+    });
+
+    it('describes a member of the actor downline', async () => {
+      const result = await loader.targetFacts(asActor(tA, tOrg), tB);
+
+      expect(result?.orgSchema).toBe(tOrg);
+      expect(result?.facts).toEqual({
+        role: 'GENERAL',
+        state: 'ACTIVE',
+        removed: false,
+        isSelf: false,
+        sameOrg: true,
+        actorIsAncestor: true,
+        isOrgRoot: false,
+        actorIsAboveOrg: false,
+      });
+    });
+
+    it('marks the actor themselves and the root of the organization', async () => {
+      const self = await loader.targetFacts(asActor(tA, tOrg), tA);
+      expect(self?.facts.isSelf).toBe(true);
+      expect(self?.facts.actorIsAncestor).toBe(false);
+
+      const root = await loader.targetFacts(asActor(tA, tOrg), tRoot);
+      expect(root?.facts.isOrgRoot).toBe(true);
+      expect(root?.facts.actorIsAncestor).toBe(false);
+      expect(root?.facts.sameOrg).toBe(true);
+    });
+
+    it('says nobody is above a branch beside or below the actor', async () => {
+      const beside = await loader.targetFacts(asActor(tC, tOrg), tB);
+      const below = await loader.targetFacts(asActor(tB, tOrg), tA);
+      expect(beside?.facts.actorIsAncestor).toBe(false);
+      expect(below?.facts.actorIsAncestor).toBe(false);
+    });
+
+    it('does not claim ancestry for another organization or a SuperAdministrator', async () => {
+      const otherOrg = await createOrg(testDb);
+      const stranger = (await createPartner(testDb, otherOrg)).accountId;
+      const superAdmin = await createSuperAdmin(testDb);
+
+      const foreign = await loader.targetFacts(asActor(stranger, otherOrg), tB);
+      expect(foreign?.facts.sameOrg).toBe(false);
+      expect(foreign?.facts.actorIsAncestor).toBe(false);
+
+      const fromSuper = await loader.targetFacts(
+        asActor(superAdmin.accountId, null),
+        tB,
+      );
+      expect(fromSuper?.facts.sameOrg).toBe(false);
+    });
+
+    it('is null for unknown accounts and for SuperAdministrators', async () => {
+      const superAdmin = await createSuperAdmin(testDb);
+      const actor = asActor(tA, tOrg);
+
+      expect(
+        await loader.targetFacts(actor, '00000000-0000-4000-8000-000000000000'),
+      ).toBeNull();
+      expect(await loader.targetFacts(actor, superAdmin.accountId)).toBeNull();
+    });
+  });
+
+  describe('downline', () => {
+    it('lists the root and everybody below, parents before children', async () => {
+      const dOrg = await createOrg(testDb);
+      const r = (await createPartner(testDb, dOrg, { role: 'PLATINUM' }))
+        .accountId;
+      const x = (await createPartner(testDb, dOrg, { recommenderId: r }))
+        .accountId;
+      const x1 = (await createPartner(testDb, dOrg, { recommenderId: x }))
+        .accountId;
+      const y = (await createPartner(testDb, dOrg, { recommenderId: r }))
+        .accountId;
+      const x2 = (await createPartner(testDb, dOrg, { recommenderId: x }))
+        .accountId;
+
+      expect(await loader.downline(dOrg, r)).toEqual([
+        { accountId: r, depth: 0 },
+        { accountId: x, depth: 1 },
+        { accountId: x1, depth: 2 },
+        { accountId: x2, depth: 2 },
+        { accountId: y, depth: 1 },
+      ]);
+      expect(await loader.downline(dOrg, x)).toEqual([
+        { accountId: x, depth: 0 },
+        { accountId: x1, depth: 1 },
+        { accountId: x2, depth: 1 },
+      ]);
+    });
+
+    it('does not loop over a corrupted, cyclic chain', async () => {
+      const cOrg = await createOrg(testDb);
+      const p = (await createPartner(testDb, cOrg)).accountId;
+      const q = (await createPartner(testDb, cOrg, { recommenderId: p }))
+        .accountId;
+      const { partners } = orgTables(cOrg);
+      await testDb.db
+        .update(partners)
+        .set({ recommenderId: q })
+        .where(eq(partners.accountId, p));
+
+      const rows = await loader.downline(cOrg, p);
+      expect(rows.map((row) => row.accountId)).toEqual([p, q]);
+    });
+
+    it('refuses a schema name that is not generated by the server', async () => {
+      await expect(loader.downline('app; drop schema app', a)).rejects.toThrow(
+        'Invalid organization schema name',
+      );
     });
   });
 });

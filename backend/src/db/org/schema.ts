@@ -48,6 +48,11 @@ export function defineOrgTables(schemaName: string) {
       profileCompletedAt: timestamp('profile_completed_at', {
         withTimezone: true,
       }),
+      // When the owner accepted the terms and consents (decision 85). The texts
+      // and their versions arrive with the consent module.
+      consentsAcceptedAt: timestamp('consents_accepted_at', {
+        withTimezone: true,
+      }),
       // The sponsor (rekomendujący). The foreign key points into the same
       // schema, so a sponsor from another organization is impossible by
       // construction (rule 6). Null only at the root of the organization.
