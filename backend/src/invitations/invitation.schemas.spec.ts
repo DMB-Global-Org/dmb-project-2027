@@ -23,21 +23,34 @@ describe('registerSchema', () => {
     ).toBe('jan@example.com');
   });
 
-  it('makes equal numbers equal: no whitespace, upper case', () => {
+  it('makes equal numbers equal: whitespace is dropped', () => {
     expect(
-      registerSchema.parse({ ...FORM, partnerNumber: ' ab 123 ' })
+      registerSchema.parse({ ...FORM, partnerNumber: ' 123 456 789 0 ' })
         .partnerNumber,
-    ).toBe('AB123');
+    ).toBe('1234567890');
   });
 
-  it.each(['', '12', 'x'.repeat(21), '12/34', '12.34'])(
-    'rejects the partner number %j',
+  it.each(['123456', '1234567890', '123456789012'])(
+    'accepts the partner number %j',
     (partnerNumber) => {
-      const result = registerSchema.safeParse({ ...FORM, partnerNumber });
-      expect(result.success).toBe(false);
-      expect(result.error?.issues[0]?.path).toEqual(['partnerNumber']);
+      expect(registerSchema.safeParse({ ...FORM, partnerNumber }).success).toBe(
+        true,
+      );
     },
   );
+
+  it.each([
+    '',
+    '12345',
+    '1234567890123',
+    '12-3456789',
+    'AB1234567',
+    '12.345678',
+  ])('rejects the partner number %j', (partnerNumber) => {
+    const result = registerSchema.safeParse({ ...FORM, partnerNumber });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.path).toEqual(['partnerNumber']);
+  });
 
   it('rejects a confirmation that differs from the password', () => {
     const result = registerSchema.safeParse({

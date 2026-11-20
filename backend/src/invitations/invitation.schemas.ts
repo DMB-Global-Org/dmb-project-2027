@@ -38,13 +38,13 @@ export const registerSchema = z
       .regex(/^[A-Za-z]{2}$/)
       .transform((v) => v.toUpperCase())
       .default('PL'),
-    // The format of Amway numbers is not specified; only characters and
-    // length are checked. Whitespace is dropped and letters upper-cased, so
-    // "ab 123" and "AB123" cannot become two accounts.
+    // Partner numbers are digits only, whatever the country: 6 to 12 of them
+    // (now 10). Whitespace typed for readability is dropped, so "123 456 789 0"
+    // and "1234567890" cannot become two accounts.
     partnerNumber: z
       .string()
-      .transform((v) => v.replace(/\s+/g, '').toUpperCase())
-      .pipe(z.string().regex(/^[0-9A-Z-]{3,20}$/)),
+      .transform((v) => v.replace(/\s+/g, ''))
+      .pipe(z.string().regex(/^[0-9]{6,12}$/)),
   })
   .refine((v) => v.password === v.passwordConfirmation, {
     path: ['passwordConfirmation'],

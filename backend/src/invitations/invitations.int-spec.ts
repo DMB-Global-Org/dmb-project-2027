@@ -586,19 +586,19 @@ describe('invitations and registration (integration)', () => {
       const first = await link(agent);
       const second = await link(agent);
       await register(anonymous(), first.token, {
-        partnerNumber: 'ab 123 456',
+        partnerNumber: '123 456 789 0',
         country: 'PL',
       });
 
       const clash = await register(anonymous(), second.token, {
-        partnerNumber: 'AB123456',
+        partnerNumber: '1234567890',
         country: 'pl',
       });
       expect(errorOf(clash)?.code).toBe('PARTNER_NUMBER_TAKEN');
 
       // The same number issued in another country is another number.
       const other = await register(anonymous(), second.token, {
-        partnerNumber: 'AB123456',
+        partnerNumber: '1234567890',
         country: 'DE',
       });
       expect(other.errors).toBeUndefined();
