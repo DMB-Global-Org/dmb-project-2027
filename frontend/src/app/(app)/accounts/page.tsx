@@ -1,4 +1,4 @@
-import { getTranslations } from "next-intl/server";
+import { getFormatter, getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -22,7 +22,8 @@ const STATE_VARIANT: Record<AccountState, "default" | "secondary" | "destructive
 
 export default async function AccountsPage() {
   await requireActiveViewer();
-  const [t, tr, ts, tst, { structure }] = await Promise.all([
+  const [format, t, tr, ts, tst, { structure }] = await Promise.all([
+    getFormatter(),
     getTranslations("accounts"),
     getTranslations("roles"),
     getTranslations("statuses"),
@@ -54,6 +55,15 @@ export default async function AccountsPage() {
                     <Link href={`/accounts/${account.id}`} className="font-medium hover:underline">
                       {displayName(account)}
                     </Link>
+                    {account.detachedOrg && (
+                      <div className="text-xs text-gold-text">
+                        {t("detached", {
+                          date: format.dateTime(new Date(account.promotedAt ?? 0), {
+                            dateStyle: "medium",
+                          }),
+                        })}
+                      </div>
+                    )}
                     {(account.firstName || account.lastName) && (
                       <div className="text-xs text-muted-foreground">{account.email}</div>
                     )}

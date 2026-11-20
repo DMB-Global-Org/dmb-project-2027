@@ -25,6 +25,7 @@ import {
   CHANGE_ROLE_MUTATION,
   CHANGE_STATUS_MUTATION,
   DEACTIVATE_MUTATION,
+  PROMOTE_MUTATION,
   REMOVE_ACCOUNT_MUTATION,
   UPDATE_ACCOUNT_DATA_MUTATION,
   UPDATE_PARTNER_NUMBER_MUTATION,
@@ -73,6 +74,7 @@ export function AccountActions({ account }: { account: Account }) {
   const [status, setStatus] = useState(account.status);
   const [moveOpen, setMoveOpen] = useState(false);
   const [removeOpen, setRemoveOpen] = useState(false);
+  const [promoteOpen, setPromoteOpen] = useState(false);
   const [candidates, setCandidates] = useState<RecommenderCandidate[]>([]);
   const [sponsorId, setSponsorId] = useState("");
 
@@ -301,6 +303,17 @@ export function AccountActions({ account }: { account: Account }) {
           </Section>
         )}
 
+        {allowed.has("PROMOTE") && (
+          <Section title={t("promoteSection")}>
+            <p className="text-xs text-muted-foreground">{t("promoteHint")}</p>
+            <div>
+              <Button disabled={busy} onClick={() => setPromoteOpen(true)}>
+                {t("promote")}
+              </Button>
+            </div>
+          </Section>
+        )}
+
         {(allowed.has("CHANGE_RECOMMENDER") || allowed.has("REMOVE_FROM_STRUCTURE")) && (
           <Section title={t("structureSection")}>
             <div className="flex flex-wrap gap-2">
@@ -353,6 +366,32 @@ export function AccountActions({ account }: { account: Account }) {
             </Button>
             <Button disabled={busy || !sponsorId} onClick={move}>
               {t("move")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={promoteOpen} onOpenChange={setPromoteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("promoteTitle", { name: displayName(account) })}</DialogTitle>
+            <DialogDescription>{t("promoteText")}</DialogDescription>
+          </DialogHeader>
+          <Alert text={errors.promote} />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPromoteOpen(false)}>
+              {t("cancel")}
+            </Button>
+            <Button
+              disabled={busy}
+              onClick={async () => {
+                const done = await run("promote", () =>
+                  gql(PROMOTE_MUTATION, { id }),
+                );
+                if (done) setPromoteOpen(false);
+              }}
+            >
+              {t("promote")}
             </Button>
           </DialogFooter>
         </DialogContent>

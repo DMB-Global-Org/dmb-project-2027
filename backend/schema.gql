@@ -9,6 +9,7 @@ enum AccountAction {
   CHANGE_ROLE
   CHANGE_STATUS
   DEACTIVATE
+  PROMOTE
   REMOVE_FROM_STRUCTURE
   UPDATE_ACCOUNT
 }
@@ -17,6 +18,7 @@ type AccountNode {
   allowedActions: [AccountAction!]!
   assignableRoles: [Role!]!
   createdAt: DateTime!
+  detachedOrg: Boolean!
   email: String!
   firstName: String
   id: ID!
@@ -26,6 +28,8 @@ type AccountNode {
   partnerNumber: String
   phone: String
   profileCompleted: Boolean!
+  promotedAt: DateTime
+  promotedBy: ID
   recommenderId: ID
   removed: Boolean!
   role: Role!
@@ -97,6 +101,7 @@ type Mutation {
   deactivateAccount(id: ID!): AccountNode!
   login(email: String!, password: String!): Viewer!
   logout: Boolean!
+  promoteAccount(id: ID!): AccountNode!
   register(input: RegisterInput!): Viewer!
   removeAccountFromStructure(id: ID!): Boolean!
   revokeInvitation(id: ID!): Invitation!

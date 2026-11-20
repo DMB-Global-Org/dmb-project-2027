@@ -160,3 +160,24 @@ describe('sponsor changed e-mail', () => {
     expect(mail.html).not.toContain('<b>x</b>');
   });
 });
+
+describe('promotion e-mail', () => {
+  const payload = { url: 'https://app.example.com/accounts' };
+
+  it.each([
+    ['pl', 'Jesteś Platyną w dMb Projekt 2027', 'Przejdź do aplikacji'],
+    ['de', 'Sie sind Platin in dMb Projekt 2027', 'Zur Anwendung'],
+    ['en', 'You are a Platinum in dMb Projekt 2027', 'Open the application'],
+  ])('is written in %s', (locale, subject, action) => {
+    const mail = renderMail('promoted', payload, locale, 'p@b.pl');
+    expect(mail.subject).toBe(subject);
+    expect(mail.text).toContain(`${action}: ${payload.url}`);
+    expect(mail.html).toContain(`href="${payload.url}"`);
+  });
+
+  it('falls back to Polish for an unknown language', () => {
+    expect(renderMail('promoted', payload, 'fr', 'p@b.pl').subject).toContain(
+      'Platyną',
+    );
+  });
+});

@@ -41,6 +41,9 @@ export interface Account {
   profileCompleted: boolean;
   recommenderId: string | null;
   isOrgRoot: boolean;
+  detachedOrg: boolean;
+  promotedAt: string | null;
+  promotedBy: string | null;
   removed: boolean;
   allowedActions: string[];
   assignableRoles: Role[];

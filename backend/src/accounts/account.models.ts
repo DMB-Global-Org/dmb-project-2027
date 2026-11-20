@@ -38,6 +38,7 @@ export const ACCOUNT_ACTIONS = [
   'CHANGE_PARTNER_NUMBER',
   'CHANGE_RECOMMENDER',
   'REMOVE_FROM_STRUCTURE',
+  'PROMOTE',
 ] as const;
 export type AccountAction = (typeof ACCOUNT_ACTIONS)[number];
 export const AccountActionEnum = enumObject(ACCOUNT_ACTIONS);
@@ -85,6 +86,21 @@ export class AccountNode {
   /** The Platinum at the head of its organization. */
   @Field()
   isOrgRoot!: boolean;
+
+  /**
+   * The Platinum at the head of an organization detached from the one the
+   * caller sees (decision 87): the caller sees only this marker, not the
+   * organization below it.
+   */
+  @Field()
+  detachedOrg!: boolean;
+
+  /** When and by whom the organization was detached (only with `detachedOrg`). */
+  @Field(() => Date, { nullable: true })
+  promotedAt!: Date | null;
+
+  @Field(() => ID, { nullable: true })
+  promotedBy!: string | null;
 
   /** Removed from the structure (only a SuperAdministrator still sees such an account). */
   @Field()

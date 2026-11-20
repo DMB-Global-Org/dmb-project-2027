@@ -135,7 +135,7 @@ Przy manualnym założeniu konta właściciel dostaje powiadomienie z prośbą o
 - Platyna jest administratorem swojej organizacji: nadaje w niej role, zmienia statusy i promuje do Platinum, wyłącznie ręcznie i bez logiki podpowiadania w aplikacji. Nie zmienia własnej roli ani statusu. Osoby z wyższymi pinami nie działają w cudzych strukturach.
 - Administrator może to samo wobec wszystkich kont w swojej dolnej linii rekomendacji, niezależnie od miejsca w strukturze, ale nie nadaje ról Administrator ani SuperAdministrator.
 - SuperAdministrator powstaje z chwilą uruchomienia aplikacji, zakłada pierwsze konta i nadaje dowolne role poza SuperAdministrator.
-- Promocja do Platinum, niezależnie od tego, kto ją nada, przenosi całą organizację tej osoby do osobnego schematu w PostgreSQL (bezpośrednia Platyna wynika ze schematu, nie jest osobnym polem konta). Nowa Platyna od tej chwili sama zarządza swoją organizacją. Dotychczasowa Platyna widzi tylko wpis: kto i kiedy został wypromowany. Nie ma żadnych danych ani podsumowań odpiętej organizacji.
+- Promocja do Platinum, niezależnie od tego, kto ją nada, przenosi całą organizację tej osoby do osobnego schematu w PostgreSQL (bezpośrednia Platyna wynika ze schematu, nie jest osobnym polem konta). Nowa Platyna od tej chwili sama zarządza swoją organizacją. Dotychczasowa Platyna widzi tylko wpis: kto i kiedy został wypromowany (znacznik przy koncie, decyzja 87). Awansowana osoba dostaje wiadomość e-mail, a nieużyte linki rejestracyjne zapraszających spoza jej gałęzi wygasają. Nie ma żadnych danych ani podsumowań odpiętej organizacji.
 - Degradacji Platyny nie przewidujemy: rola Platinum nie może zostać obniżona (konto można tylko dezaktywować).
 
 **Zmiana rekomendującego, usunięcie ze struktury, dezaktywacja**

@@ -138,6 +138,7 @@ export class RelationLoader {
       .from(orgSchemas)
       .where(eq(orgSchemas.name, account.orgSchema));
 
+    const isOrgRoot = registry?.rootAccountId === targetAccountId;
     const isSelf = actor.accountId === targetAccountId;
     const sameOrg = actor.orgSchema === account.orgSchema;
     const actorIsAncestor =
@@ -160,10 +161,10 @@ export class RelationLoader {
         isSelf,
         sameOrg,
         actorIsAncestor,
-        isOrgRoot: registry?.rootAccountId === targetAccountId,
-        // Known only once promotions record the organization they detached
-        // from (PR9); until then nobody stands "above" an organization.
-        actorIsAboveOrg: false,
+        isOrgRoot,
+        actorIsAboveOrg: isOrgRoot
+          ? await this.actorIsAboveOrg(actor, account.orgSchema, executor)
+          : false,
       },
     };
   }
@@ -262,5 +263,45 @@ export class RelationLoader {
     await executor.execute(
       sql`select pg_advisory_xact_lock(hashtextextended(${orgSchema}, 0))`,
     );
+  }
+
+  /**
+   * Does the actor stand in the line above an organization that was detached
+   * by a promotion (decision 87)? The root of such an organization leaves a
+   * marker row in the organization it came from; the actor is above it when
+   * they are a strict ancestor of that marker. Organizations detached from a
+   * detached one are followed up the registry, so a Platinum's Platinum counts.
+   */
+  async actorIsAboveOrg(
+    actor: AuthContext,
+    orgSchema: string,
+    executor: Database | Tx = this.db,
+  ): Promise<boolean> {
+    if (!actor.orgSchema) return false;
+    let current = orgSchema;
+    // The registry chain is finite; the bound only guards against corrupt data.
+    for (let level = 0; level < 32; level++) {
+      const [org] = await executor
+        .select({
+          sourceSchema: orgSchemas.sourceSchema,
+          rootAccountId: orgSchemas.rootAccountId,
+        })
+        .from(orgSchemas)
+        .where(eq(orgSchemas.name, current));
+      if (!org?.sourceSchema || !org.rootAccountId) return false;
+      if (actor.orgSchema === org.sourceSchema) {
+        return (
+          actor.accountId !== org.rootAccountId &&
+          (await this.isSelfOrAncestor(
+            org.sourceSchema,
+            actor.accountId,
+            org.rootAccountId,
+            executor,
+          ))
+        );
+      }
+      current = org.sourceSchema;
+    }
+    return false;
   }
 }

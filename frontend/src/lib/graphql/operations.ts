@@ -1,5 +1,5 @@
 export const ACCOUNT_FIELDS = `id email firstName lastName phone partnerNumber partnerCountry
-  role status state profileCompleted recommenderId isOrgRoot removed allowedActions assignableRoles`;
+  role status state profileCompleted recommenderId isOrgRoot detachedOrg promotedAt promotedBy removed allowedActions assignableRoles`;
 
 export const VIEWER_QUERY = "query { viewer { id email role state locale } }";
 export const STRUCTURE_QUERY = `query { structure { depth account { ${ACCOUNT_FIELDS} } } }`;
@@ -39,3 +39,4 @@ export const CHANGE_RECOMMENDER_MUTATION = `mutation ($id: ID!, $recommenderId: 
   changeAccountRecommender(id: $id, recommenderId: $recommenderId) { id } }`;
 export const REMOVE_ACCOUNT_MUTATION =
   "mutation ($id: ID!) { removeAccountFromStructure(id: $id) }";
+export const PROMOTE_MUTATION = "mutation ($id: ID!) { promoteAccount(id: $id) { id } }";

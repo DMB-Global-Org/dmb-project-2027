@@ -85,7 +85,8 @@
     "state": "Account state",
     "profile": "Profile",
     "profileDone": "Complete",
-    "profileMissing": "To be completed"
+    "profileMissing": "To be completed",
+    "detached": "Detached organization (since {date})"
   },
   "invitations": {
     "title": "Invitations",
@@ -168,7 +169,12 @@
     "cancel": "Cancel",
     "move": "Move",
     "removeTitle": "Remove {name} from the structure?",
-    "removeText": "The people they sponsored move up to their sponsor. The account is deactivated and disappears from the list. This cannot be undone in the application."
+    "removeText": "The people they sponsored move up to their sponsor. The account is deactivated and disappears from the list. This cannot be undone in the application.",
+    "promoteSection": "Promotion",
+    "promoteHint": "The person and their downline will move into a separate Platinum organization.",
+    "promote": "Promote to Platinum",
+    "promoteTitle": "Promote {name} to Platinum?",
+    "promoteText": "The person and their whole downline will be moved into a separate organization that they manage themselves. You will see only their account and the date of the promotion, not their organization. This cannot be undone."
   },
   "reasons": {
     "actor_not_active": "Your account is not active.",

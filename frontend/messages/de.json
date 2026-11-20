@@ -85,7 +85,8 @@
     "state": "Kontostatus",
     "profile": "Profil",
     "profileDone": "Vollständig",
-    "profileMissing": "Zu ergänzen"
+    "profileMissing": "Zu ergänzen",
+    "detached": "Abgetrennte Organisation (seit {date})"
   },
   "invitations": {
     "title": "Einladungen",
@@ -168,7 +169,12 @@
     "cancel": "Abbrechen",
     "move": "Verschieben",
     "removeTitle": "{name} aus der Struktur entfernen?",
-    "removeText": "Die von ihr empfohlenen Personen wechseln zu ihrem Empfehlenden. Das Konto wird deaktiviert und verschwindet aus der Liste. In der Anwendung lässt sich das nicht rückgängig machen."
+    "removeText": "Die von ihr empfohlenen Personen wechseln zu ihrem Empfehlenden. Das Konto wird deaktiviert und verschwindet aus der Liste. In der Anwendung lässt sich das nicht rückgängig machen.",
+    "promoteSection": "Beförderung",
+    "promoteHint": "Die Person und ihre Downline wechseln in eine eigene Platin-Organisation.",
+    "promote": "Zu Platin befördern",
+    "promoteTitle": "{name} zu Platin befördern?",
+    "promoteText": "Die Person wird mit ihrer gesamten Downline in eine eigene Organisation verschoben und verwaltet diese selbst. Sie sehen nur ihr Konto und das Datum der Beförderung, nicht ihre Organisation. Das lässt sich nicht rückgängig machen."
   },
   "reasons": {
     "actor_not_active": "Ihr Konto ist nicht aktiv.",
