@@ -39,6 +39,14 @@ export class MailerSendTransport implements MailTransport {
           subject: message.subject,
           text: message.text,
           html: message.html,
+          // Messages carry one-time links: MailerSend must not rewrite them
+          // into tracking redirects (which would also route the secret
+          // through its servers) nor track who opens or clicks.
+          settings: {
+            track_clicks: false,
+            track_opens: false,
+            track_content: false,
+          },
         }),
         signal: AbortSignal.timeout(15_000),
       });
@@ -47,7 +55,18 @@ export class MailerSendTransport implements MailTransport {
       throw new MailError(`MailerSend unreachable: ${String(error)}`, false);
     }
 
-    if (response.ok) return;
+    if (response.ok) {
+      // 202 without a message id means nothing was queued: every recipient is
+      // suppressed (blocklisted, bounced, unsubscribed). Retrying is pointless.
+      if (!response.headers.get('x-message-id')) {
+        const detail = (await response.text().catch(() => '')).slice(0, 500);
+        throw new MailError(
+          `MailerSend accepted the request but queued nothing: ${detail}`,
+          true,
+        );
+      }
+      return;
+    }
 
     const detail = (await response.text().catch(() => '')).slice(0, 500);
     // 4xx means the request itself is wrong (address, key, domain) and a retry

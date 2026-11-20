@@ -18,8 +18,14 @@ function transportWith(fetchFn: typeof fetch) {
   });
 }
 
+/** A 2xx answer carries the id of the queued message, like the real API. */
 const respond = (status: number, body = '') =>
-  vi.fn<typeof fetch>().mockResolvedValue(new Response(body, { status }));
+  vi.fn<typeof fetch>().mockResolvedValue(
+    new Response(body, {
+      status,
+      headers: status < 300 ? { 'x-message-id': 'msg-1' } : {},
+    }),
+  );
 
 async function failureOf(fetchFn: typeof fetch): Promise<MailError> {
   try {
@@ -49,7 +55,39 @@ describe('MailerSendTransport', () => {
       subject: 'Hello',
       text: 'plain',
       html: '<p>html</p>',
+      settings: {
+        track_clicks: false,
+        track_opens: false,
+        track_content: false,
+      },
     });
+  });
+
+  it('never lets MailerSend track opens or clicks, nor rewrite links', async () => {
+    const fetchFn = respond(202);
+
+    await transportWith(fetchFn).send(MESSAGE);
+
+    const { settings } = JSON.parse(fetchFn.mock.calls[0]![1]!.body as string);
+    expect(settings).toEqual({
+      track_clicks: false,
+      track_opens: false,
+      track_content: false,
+    });
+  });
+
+  it('does not count a message as sent when every recipient is suppressed', async () => {
+    const suppressed = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response('{"warnings":[{"type":"ALL_SUPPRESSED"}]}', {
+        status: 202,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+
+    const error = await failureOf(suppressed);
+
+    expect(error.permanent).toBe(true);
+    expect(error.message).toContain('ALL_SUPPRESSED');
   });
 
   it.each([400, 401, 403, 422])(
