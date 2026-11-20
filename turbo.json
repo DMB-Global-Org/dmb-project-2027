@@ -10,13 +10,13 @@
     "dev": {
       "cache": false,
       "persistent": true,
-      "passThroughEnv": ["PORT", "CORS_ORIGINS", "CORS_ORIGIN_PATTERN", "DATABASE_URL", "SESSION_TTL_DAYS", "TRUST_PROXY_HOPS"]
+      "passThroughEnv": ["PORT", "CORS_ORIGINS", "CORS_ORIGIN_PATTERN", "DATABASE_URL", "SESSION_TTL_DAYS", "TRUST_PROXY_HOPS", "APP_BASE_URL"]
     },
     "start": {
       "dependsOn": ["build"],
       "cache": false,
       "persistent": true,
-      "passThroughEnv": ["PORT", "CORS_ORIGINS", "CORS_ORIGIN_PATTERN", "DATABASE_URL", "SESSION_TTL_DAYS", "TRUST_PROXY_HOPS"]
+      "passThroughEnv": ["PORT", "CORS_ORIGINS", "CORS_ORIGIN_PATTERN", "DATABASE_URL", "SESSION_TTL_DAYS", "TRUST_PROXY_HOPS", "APP_BASE_URL"]
     },
     "lint": {},
     "test": {},

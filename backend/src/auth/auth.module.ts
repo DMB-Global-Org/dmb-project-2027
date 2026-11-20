@@ -8,6 +8,7 @@ import { AuthGuard } from './auth.guard.js';
 import { AuthResolver } from './auth.resolver.js';
 import { AuthService } from './auth.service.js';
 import { LoginThrottle } from './login-throttle.js';
+import { SessionCookie } from './session-cookie.js';
 import { SessionService } from './session.service.js';
 
 @Module({
@@ -23,12 +24,13 @@ import { SessionService } from './session.service.js';
     },
     ActorService,
     SessionService,
+    SessionCookie,
     LoginThrottle,
     AuthService,
     AuthResolver,
     // Every resolver needs a logged-in account unless marked @Public().
     { provide: APP_GUARD, useClass: AuthGuard },
   ],
-  exports: [AuthService, ActorService, SessionService],
+  exports: [AuthService, ActorService, SessionService, SessionCookie],
 })
 export class AuthModule {}

@@ -1,16 +1,6 @@
-/**
- * Extracts the Postgres SQLSTATE code from an error thrown by drizzle (which
- * wraps the driver error in `cause`) or by postgres.js directly.
- */
-export function pgErrorCode(error: unknown): string | undefined {
-  let current: unknown = error;
-  while (current && typeof current === 'object') {
-    const code = (current as { code?: unknown }).code;
-    if (typeof code === 'string' && /^[0-9A-Z]{5}$/.test(code)) return code;
-    current = (current as { cause?: unknown }).cause;
-  }
-  return undefined;
-}
+import { pgErrorCode } from '../../src/db/pg-error.js';
+
+export { pgErrorCode };
 
 /** Runs `fn` and returns the SQLSTATE of the error it throws (fails if none). */
 export async function expectPgError(fn: () => Promise<unknown>) {

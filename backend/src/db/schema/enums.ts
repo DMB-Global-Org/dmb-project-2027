@@ -34,3 +34,12 @@ export const ACCOUNT_STATES = [
 ] as const;
 export type AccountState = (typeof ACCOUNT_STATES)[number];
 export const accountStateEnum = appSchema.enum('account_state', ACCOUNT_STATES);
+
+// What an invitation creates: an ordinary Partner inside an existing
+// organization, or the Platinum at the root of a brand-new one (decision 68).
+export const INVITATION_KINDS = ['PARTNER', 'PLATINUM'] as const;
+export type InvitationKind = (typeof INVITATION_KINDS)[number];
+export const invitationKindEnum = appSchema.enum(
+  'invitation_kind',
+  INVITATION_KINDS,
+);
