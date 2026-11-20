@@ -6,6 +6,8 @@ on:
     paths:
       - backend/drizzle/**
       - backend/drizzle.config.ts
+      - backend/drizzle-org/**
+      - backend/src/db/org-migrator/**
       - .github/workflows/db-migrate.yml
   workflow_dispatch:
 
@@ -31,8 +33,9 @@ jobs:
 
       - run: pnpm install --frozen-lockfile --filter backend...
 
+      # `app` schema first, then every registered organization schema.
       - name: Apply migrations
-        run: pnpm --filter backend db:migrate
+        run: pnpm --filter backend db:migrate:all
         env:
           # Session pooler (port 5432) – GitHub runners have no IPv6, so not db.<ref>.supabase.co
           DATABASE_DIRECT_URL: ${{ secrets.DATABASE_DIRECT_URL }}

@@ -21,10 +21,15 @@
     "test:cov": "vitest run --coverage",
     "test:debug": "vitest --inspect-brk --no-file-parallelism",
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
+    "test:int": "vitest run --config ./vitest.config.int.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "db:check": "drizzle-kit check"
+    "create-superadmin": "tsx src/scripts/create-superadmin.ts",
+    "db:check": "drizzle-kit check",
+    "db:generate:org": "drizzle-kit generate --config=drizzle.org.config.ts",
+    "db:migrate:orgs": "tsx src/db/org-migrator/cli.ts",
+    "db:migrate:all": "drizzle-kit migrate && tsx src/db/org-migrator/cli.ts"
   },
   "dependencies": {
     "@apollo/server": "^5.5.1",
@@ -57,6 +62,7 @@
     "prettier": "^3.4.2",
     "source-map-support": "^0.5.21",
     "supertest": "^7.0.0",
+    "tsx": "^4.23.15",
     "typescript": "^6.0.2",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^4.1.2"

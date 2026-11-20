@@ -2,37 +2,20 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
-input CreateNoteInput {
-  content: String
-  title: String!
-}
-
-"""
-A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
-"""
-scalar DateTime
-
 type Mutation {
-  createNote(input: CreateNoteInput!): Note!
-  removeNote(id: ID!): Boolean!
-  updateNote(input: UpdateNoteInput!): Note!
-}
-
-type Note {
-  content: String
-  createdAt: DateTime!
-  id: ID!
-  title: String!
-  updatedAt: DateTime!
+  login(email: String!, password: String!): Viewer!
+  logout: Boolean!
 }
 
 type Query {
-  note(id: ID!): Note!
-  notes: [Note!]!
+  health: String!
+  viewer: Viewer
 }
 
-input UpdateNoteInput {
-  content: String
+type Viewer {
+  email: String!
   id: ID!
-  title: String
+  locale: String!
+  role: String!
+  state: String!
 }

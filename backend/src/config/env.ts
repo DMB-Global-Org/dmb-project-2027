@@ -30,6 +30,11 @@ const envSchema = z.object({
       }
     }),
   DATABASE_URL: z.url(),
+  // How long a login lasts.
+  SESSION_TTL_DAYS: z.coerce.number().int().positive().default(14),
+  // Number of reverse proxies in front of the app (Render, Vercel). With it
+  // set correctly, req.ip is the real client IP (login throttling, audit log).
+  TRUST_PROXY_HOPS: z.coerce.number().int().min(0).default(0),
 });
 
 export type Env = z.infer<typeof envSchema>;

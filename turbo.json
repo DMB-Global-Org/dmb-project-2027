@@ -10,16 +10,20 @@
     "dev": {
       "cache": false,
       "persistent": true,
-      "passThroughEnv": ["PORT", "CORS_ORIGINS", "CORS_ORIGIN_PATTERN", "DATABASE_URL"]
+      "passThroughEnv": ["PORT", "CORS_ORIGINS", "CORS_ORIGIN_PATTERN", "DATABASE_URL", "SESSION_TTL_DAYS", "TRUST_PROXY_HOPS"]
     },
     "start": {
       "dependsOn": ["build"],
       "cache": false,
       "persistent": true,
-      "passThroughEnv": ["PORT", "CORS_ORIGINS", "CORS_ORIGIN_PATTERN", "DATABASE_URL"]
+      "passThroughEnv": ["PORT", "CORS_ORIGINS", "CORS_ORIGIN_PATTERN", "DATABASE_URL", "SESSION_TTL_DAYS", "TRUST_PROXY_HOPS"]
     },
     "lint": {},
     "test": {},
+    "test:int": {
+      "cache": false,
+      "passThroughEnv": ["DATABASE_URL_TEST"]
+    },
     "db:generate": {
       "cache": false,
       "passThroughEnv": ["DATABASE_DIRECT_URL"]
