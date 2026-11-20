@@ -1,0 +1,421 @@
+{
+  "id": "204c6477-c1ea-4b4e-bd9b-fbdebdbafef3",
+  "prevId": "f06e3920-4fbe-46b5-a861-066c2842d45b",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "app.accounts": {
+      "name": "accounts",
+      "schema": "app",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "password_hash": {
+          "name": "password_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "org_schema": {
+          "name": "org_schema",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_super_admin": {
+          "name": "is_super_admin",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "locale": {
+          "name": "locale",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pl'"
+        },
+        "partner_number": {
+          "name": "partner_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "partner_country": {
+          "name": "partner_country",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "accounts_org_schema_org_schemas_name_fk": {
+          "name": "accounts_org_schema_org_schemas_name_fk",
+          "tableFrom": "accounts",
+          "columnsFrom": [
+            "org_schema"
+          ],
+          "tableTo": "org_schemas",
+          "schemaTo": "app",
+          "columnsTo": [
+            "name"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "accounts_email_key": {
+          "name": "accounts_email_key",
+          "columns": [
+            "email"
+          ],
+          "nullsNotDistinct": false
+        },
+        "accounts_partner_number_key": {
+          "name": "accounts_partner_number_key",
+          "columns": [
+            "partner_country",
+            "partner_number"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "accounts_email_lowercase": {
+          "name": "accounts_email_lowercase",
+          "value": "\"app\".\"accounts\".\"email\" = lower(\"app\".\"accounts\".\"email\")"
+        },
+        "accounts_partner_number_pair": {
+          "name": "accounts_partner_number_pair",
+          "value": "(\"app\".\"accounts\".\"partner_number\" is null) = (\"app\".\"accounts\".\"partner_country\" is null)"
+        },
+        "accounts_org_schema_or_super_admin": {
+          "name": "accounts_org_schema_or_super_admin",
+          "value": "\"app\".\"accounts\".\"is_super_admin\" = (\"app\".\"accounts\".\"org_schema\" is null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "app.org_schema_migrations": {
+      "name": "org_schema_migrations",
+      "schema": "app",
+      "columns": {
+        "schema_name": {
+          "name": "schema_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "file": {
+          "name": "file",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hash": {
+          "name": "hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "applied_at": {
+          "name": "applied_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "org_schema_migrations_schema_name_org_schemas_name_fk": {
+          "name": "org_schema_migrations_schema_name_org_schemas_name_fk",
+          "tableFrom": "org_schema_migrations",
+          "columnsFrom": [
+            "schema_name"
+          ],
+          "tableTo": "org_schemas",
+          "schemaTo": "app",
+          "columnsTo": [
+            "name"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {
+        "org_schema_migrations_schema_name_file_pk": {
+          "name": "org_schema_migrations_schema_name_file_pk",
+          "columns": [
+            "schema_name",
+            "file"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "app.org_schemas": {
+      "name": "org_schemas",
+      "schema": "app",
+      "columns": {
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "root_account_id": {
+          "name": "root_account_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "org_schemas_root_account_id_accounts_id_fk": {
+          "name": "org_schemas_root_account_id_accounts_id_fk",
+          "tableFrom": "org_schemas",
+          "columnsFrom": [
+            "root_account_id"
+          ],
+          "tableTo": "accounts",
+          "schemaTo": "app",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "org_schemas_name_format": {
+          "name": "org_schemas_name_format",
+          "value": "\"app\".\"org_schemas\".\"name\" ~ '^org_[0-9a-f]{8}$'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "app.audit_log": {
+      "name": "audit_log",
+      "schema": "app",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "at": {
+          "name": "at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "actor_account_id": {
+          "name": "actor_account_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "action": {
+          "name": "action",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "object_type": {
+          "name": "object_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "object_id": {
+          "name": "object_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "subject_account_id": {
+          "name": "subject_account_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "before": {
+          "name": "before",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "after": {
+          "name": "after",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ip": {
+          "name": "ip",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_agent": {
+          "name": "user_agent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "audit_log_subject_at_idx": {
+          "name": "audit_log_subject_at_idx",
+          "columns": [
+            {
+              "expression": "subject_account_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "audit_log_actor_account_id_accounts_id_fk": {
+          "name": "audit_log_actor_account_id_accounts_id_fk",
+          "tableFrom": "audit_log",
+          "columnsFrom": [
+            "actor_account_id"
+          ],
+          "tableTo": "accounts",
+          "schemaTo": "app",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "audit_log_subject_account_id_accounts_id_fk": {
+          "name": "audit_log_subject_account_id_accounts_id_fk",
+          "tableFrom": "audit_log",
+          "columnsFrom": [
+            "subject_account_id"
+          ],
+          "tableTo": "accounts",
+          "schemaTo": "app",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "app.account_state": {
+      "name": "account_state",
+      "schema": "app",
+      "values": [
+        "PENDING_ACTIVATION",
+        "ACTIVE",
+        "DEACTIVATED"
+      ]
+    },
+    "app.partner_status": {
+      "name": "partner_status",
+      "schema": "app",
+      "values": [
+        "INACTIVE",
+        "ACTIVE",
+        "GO_MAGIC",
+        "DIAMOND_SCHOOL"
+      ]
+    },
+    "app.role": {
+      "name": "role",
+      "schema": "app",
+      "values": [
+        "GENERAL",
+        "FOUNDATION",
+        "BUILDER",
+        "SILVER",
+        "PLATINUM",
+        "ADMINISTRATOR",
+        "SUPER_ADMINISTRATOR"
+      ]
+    }
+  },
+  "schemas": {
+    "app": "app"
+  },
+  "views": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

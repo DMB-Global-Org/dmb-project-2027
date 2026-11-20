@@ -27,6 +27,7 @@ Monorepo pnpm + Turborepo (`pnpm-workspace.yaml`: `frontend`, `backend`), Node >
 
 - `pnpm dev`, `pnpm build`, `pnpm lint`, `pnpm test`
 - `pnpm db:generate` (nowa migracja z `backend/src/db/schema`), `pnpm db:migrate`, `pnpm db:check`, `pnpm db:studio`
+- Tor organizacji (schematy `org_*`, decyzja 77): `pnpm --filter backend db:generate:org` (SQL z `backend/src/db/org/schema.ts` do `backend/drizzle-org/`), `pnpm --filter backend db:migrate:all` (najpierw `app`, potem każdy zarejestrowany schemat organizacji). Nigdy nie uruchamiaj `drizzle-kit migrate` z `drizzle.org.config.ts`.
 - Backend osobno: `pnpm --filter backend test`, `pnpm --filter backend test:e2e`
 - Testy integracyjne (prawdziwy Postgres): `docker compose up -d --wait`, potem `pnpm test:int`. Baza `dmb_test` na porcie 5434 (`DATABASE_URL_TEST`); nazwa bazy musi kończyć się na `_test`, bo testy kasują schematy. Pliki `*.int-spec.ts`.
 - Zmienne: `backend/.env` (`DATABASE_URL` = pooler 6543, `DATABASE_DIRECT_URL` = 5432 dla migracji), `frontend/.env.local` (`NEXT_PUBLIC_API_URL`). Nie commituj plików `.env`.
@@ -76,6 +77,6 @@ Każda organizacja platynowa ma własny schemat PostgreSQL tworzony w trakcie dz
 ## Sposób pracy
 
 - Przy większych zadaniach najpierw plan (tryb planowania), potem kod.
-- Zmiany schematu bazy tylko przez Drizzle i `pnpm db:generate`; nie edytuj ręcznie wygenerowanych plików w `backend/drizzle/`.
+- Zmiany schematu bazy tylko przez Drizzle i `pnpm db:generate`; nie edytuj ręcznie wygenerowanych plików w `backend/drizzle/` ani `backend/drizzle-org/` (ręczny SQL, np. triggery, tylko przez `drizzle-kit generate --custom`).
 - Każda reguła uprawnień i walidacji ma test w Vitest.
 - Gdy zapada nowa decyzja biznesowa, dopisz ją do `docs/ustalenia-i-kontekst.md` (kolejny numer) i popraw `docs/specyfikacja.md`.

@@ -7,7 +7,7 @@ import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { validateEnv } from './config/env.js';
 import { DatabaseModule } from './db/database.module.js';
-import { NotesModule } from './notes/notes.module.js';
+import { HealthModule } from './health/health.module.js';
 
 @Module({
   imports: [
@@ -18,7 +18,7 @@ import { NotesModule } from './notes/notes.module.js';
       sortSchema: true,
     }),
     DatabaseModule,
-    NotesModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

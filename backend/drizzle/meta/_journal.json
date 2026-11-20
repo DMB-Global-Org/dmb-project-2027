@@ -8,6 +8,27 @@
       "when": 1791140593826,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1795134137952,
+      "tag": "0001_identity_and_org_registry",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795134147983,
+      "tag": "0002_drop_notes",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795134153020,
+      "tag": "0003_audit_log_immutable",
+      "breakpoints": true
     }
   ]
 }
