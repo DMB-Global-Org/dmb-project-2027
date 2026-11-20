@@ -191,4 +191,14 @@ export class AccountsResolver {
   ): Promise<RecommenderCandidate[]> {
     return this.accounts.recommenderCandidates(auth, parseId(id));
   }
+
+  /** Promotes a person to Platinum: they and their downline move into their own organization. */
+  @Mutation(() => AccountNode)
+  promoteAccount(
+    @Args('id', { type: () => ID }) id: string,
+    @RequireAuth() auth: AuthContext,
+    @Context() ctx: GqlContext,
+  ): Promise<AccountNode> {
+    return this.accounts.promote(auth, parseId(id), requestMeta(ctx.req));
+  }
 }

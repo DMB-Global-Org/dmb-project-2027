@@ -91,7 +91,8 @@
     "state": "Stan konta",
     "profile": "Profil",
     "profileDone": "Uzupełniony",
-    "profileMissing": "Do uzupełnienia"
+    "profileMissing": "Do uzupełnienia",
+    "detached": "Odpięta organizacja (od {date})"
   },
   "invitations": {
     "title": "Zaproszenia",
@@ -169,7 +170,12 @@
     "cancel": "Anuluj",
     "move": "Przenieś",
     "removeTitle": "Usunąć {name} ze struktury?",
-    "removeText": "Osoby przez nią zarekomendowane przejdą do jej rekomendującego. Konto zostanie dezaktywowane i zniknie z listy. Tej operacji nie można cofnąć w aplikacji."
+    "removeText": "Osoby przez nią zarekomendowane przejdą do jej rekomendującego. Konto zostanie dezaktywowane i zniknie z listy. Tej operacji nie można cofnąć w aplikacji.",
+    "promoteSection": "Awans",
+    "promoteHint": "Osoba i jej dolna linia przejdą do odrębnej organizacji platynowej.",
+    "promote": "Awansuj do Platinum",
+    "promoteTitle": "Awansować {name} do Platinum?",
+    "promoteText": "Osoba wraz z całą swoją dolną linią zostanie przeniesiona do osobnej organizacji i sama będzie nią zarządzać. Ty zobaczysz tylko jej konto i datę awansu, nie jej organizację. Tej operacji nie można cofnąć."
   },
   "reasons": {
     "actor_not_active": "Twoje konto nie jest aktywne.",

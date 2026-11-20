@@ -15,6 +15,7 @@ import { orgTables } from '../db/org/org-tables.js';
 import { accounts, invitations, orgSchemas } from '../db/schema/index.js';
 import { TxRunner } from '../db/tx-runner.js';
 import { OrgSchemaService } from '../org/org-schema.service.js';
+import { RelationLoader } from '../structure/relation-loader.js';
 import { hashInvitationToken } from './invitation-token.js';
 import { InvitationsService } from './invitations.service.js';
 
@@ -41,6 +42,7 @@ export class RegistrationService {
     private readonly actors: ActorService,
     private readonly sessions: SessionService,
     private readonly audit: AuditService,
+    private readonly relations: RelationLoader,
   ) {}
 
   /**
@@ -56,12 +58,18 @@ export class RegistrationService {
     now = new Date(),
   ): Promise<RegistrationResult> {
     // Cheap check first: do not spend a password hash on a dead link.
-    if (!(await this.invitations.findUsable(token, now))) {
-      throw appError('INVITATION_INVALID');
-    }
+    const preview = await this.invitations.findUsable(token, now);
+    if (!preview) throw appError('INVITATION_INVALID');
     const passwordHash = await hashPassword(input.password);
 
     const accountId = await this.tx.run(async (tx) => {
+      // A person joining an organization takes its structure lock first, like
+      // moves, removals and promotions, so a promotion cannot carry the branch
+      // away while the new row is being added. The lock comes before the row
+      // lock on the invitation (a promotion updates invitations: no deadlock).
+      if (preview.kind === 'PARTNER' && preview.orgSchema) {
+        await this.relations.lockOrg(tx, preview.orgSchema);
+      }
       // Lock the row: of two simultaneous saves with one link, the second
       // waits, then sees it used (the condition is re-checked after the lock).
       const [invitation] = await tx
@@ -77,6 +85,8 @@ export class RegistrationService {
         .for('update');
       if (
         !invitation ||
+        // A promotion moved the link to another organization meanwhile.
+        invitation.orgSchema !== preview.orgSchema ||
         !(await this.invitations.inviterMayInvite(
           invitation.inviterAccountId,
         )) ||

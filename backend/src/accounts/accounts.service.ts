@@ -29,6 +29,7 @@ import {
 } from '../db/schema/index.js';
 import { TxRunner, type Tx } from '../db/tx-runner.js';
 import { OutboxService } from '../mail/outbox.service.js';
+import { PromotionService } from './promotion.service.js';
 import {
   RelationLoader,
   type LoadedTarget,
@@ -59,6 +60,8 @@ interface AccountRow {
   email: string;
   partnerNumber: string | null;
   partnerCountry: string | null;
+  /** Set on the marker of an organization detached by a promotion (decision 87). */
+  detached: { promotedAt: Date; promotedBy: string } | null;
 }
 
 /** A new sponsor who passes every check; used to ask `can` whether moving is possible at all. */
@@ -82,6 +85,7 @@ export class AccountsService {
     private readonly audit: AuditService,
     private readonly outbox: OutboxService,
     private readonly sessions: SessionService,
+    private readonly promotion: PromotionService,
     private readonly config: ConfigService<Env, true>,
   ) {}
 
@@ -123,16 +127,20 @@ export class AccountsService {
         if (!row) continue;
         const isSelf = accountId === auth.accountId;
         const superAdmin = auth.actor.role === 'SUPER_ADMINISTRATOR';
+        // The marker of a detached organization stands in this tree, but the
+        // person is the root of another one: the caller is above that
+        // organization, not its member.
+        const detached = row.detached !== null;
         const facts: TargetFacts = {
           role: row.partner.role,
           state: row.partner.state,
           removed: row.partner.removedAt !== null,
           isSelf,
-          sameOrg: !superAdmin,
+          sameOrg: !superAdmin && !detached,
           // Everybody in the downline is below the caller by construction.
-          actorIsAncestor: !superAdmin && !isSelf,
-          isOrgRoot: accountId === orgRootId,
-          actorIsAboveOrg: false,
+          actorIsAncestor: !superAdmin && !isSelf && !detached,
+          isOrgRoot: detached || accountId === orgRootId,
+          actorIsAboveOrg: detached,
         };
         entries.push({ depth, account: this.describe(auth.actor, facts, row) });
       }
@@ -149,7 +157,12 @@ export class AccountsService {
     const loaded = await this.relations.targetFacts(auth, accountId);
     if (!loaded || !this.visible(auth, loaded)) return null;
     const row = await this.rowOf(loaded.orgSchema, accountId);
-    return row ? this.describe(auth.actor, loaded.facts, row) : null;
+    if (!row) return null;
+    // Seen from above, the head of a detached organization is a marker.
+    if (loaded.facts.actorIsAboveOrg) {
+      row.detached = await this.promotionOf(loaded.orgSchema);
+    }
+    return this.describe(auth.actor, loaded.facts, row);
   }
 
   async myProfile(auth: AuthContext): Promise<MyProfile | null> {
@@ -683,6 +696,28 @@ export class AccountsService {
     });
   }
 
+  /**
+   * Promotes a person to Platinum (decisions 64 and 77): they and their whole
+   * downline move into a new organization schema, all in one transaction. The
+   * line above keeps only a marker. Irreversible (Platinums are never demoted).
+   */
+  async promote(
+    auth: AuthContext,
+    id: string,
+    meta: RequestMeta,
+    now = new Date(),
+  ): Promise<AccountNode> {
+    await this.tx.run(async (tx) => {
+      await this.lockOrgOf(tx, id);
+      const target = await this.lockTarget(auth, id, tx);
+      assertAllowed(
+        can(auth.actor, { action: 'PROMOTE', target: target.facts }),
+      );
+      await this.promotion.promote(tx, { auth, target, meta, now });
+    });
+    return this.viewAfterChange(auth, id);
+  }
+
   // ------------------------------------------------------------- helpers
 
   /**
@@ -741,7 +776,9 @@ export class AccountsService {
     return (
       auth.actor.role === 'SUPER_ADMINISTRATOR' ||
       loaded.facts.isSelf ||
-      loaded.facts.actorIsAncestor
+      loaded.facts.actorIsAncestor ||
+      // The line above sees the account of a Platinum who was detached.
+      loaded.facts.actorIsAboveOrg
     );
   }
 
@@ -821,11 +858,46 @@ export class AccountsService {
         email: accounts.email,
         partnerNumber: accounts.partnerNumber,
         partnerCountry: accounts.partnerCountry,
+        accountOrg: accounts.orgSchema,
       })
       .from(partners)
       .innerJoin(accounts, eq(accounts.id, partners.accountId))
       .where(inArray(partners.accountId, ids));
-    return new Map(rows.map((row) => [row.partner.accountId, row]));
+
+    const result = new Map<string, AccountRow>();
+    for (const { accountOrg, ...row } of rows) {
+      const id = row.partner.accountId;
+      if (!accountOrg || accountOrg === orgSchema) {
+        result.set(id, { ...row, detached: null });
+        continue;
+      }
+      // A marker: the person now heads another organization. Their real row
+      // (role, status, state, data) lives there.
+      const [real] = await this.db
+        .select({ partner: orgTables(accountOrg).partners })
+        .from(orgTables(accountOrg).partners)
+        .where(eq(orgTables(accountOrg).partners.accountId, id));
+      const detached = await this.promotionOf(accountOrg);
+      result.set(id, {
+        ...row,
+        partner: real?.partner ?? row.partner,
+        detached,
+      });
+    }
+    return result;
+  }
+
+  /** Who promoted the head of an organization and when (null for founded organizations). */
+  private async promotionOf(
+    orgSchema: string,
+  ): Promise<{ promotedAt: Date; promotedBy: string } | null> {
+    const [org] = await this.db
+      .select({ at: orgSchemas.promotedAt, by: orgSchemas.promotedBy })
+      .from(orgSchemas)
+      .where(eq(orgSchemas.name, orgSchema));
+    return org?.at && org.by
+      ? { promotedAt: org.at, promotedBy: org.by }
+      : null;
   }
 
   private async rowOf(
@@ -878,6 +950,9 @@ export class AccountsService {
       profileCompleted: partner.profileCompletedAt !== null,
       recommenderId: partner.recommenderId,
       isOrgRoot: facts.isOrgRoot,
+      detachedOrg: row.detached !== null,
+      promotedAt: row.detached?.promotedAt ?? null,
+      promotedBy: row.detached?.promotedBy ?? null,
       removed: facts.removed,
       createdAt: partner.createdAt,
       allowedActions,

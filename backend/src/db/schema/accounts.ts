@@ -22,11 +22,29 @@ export const orgSchemas = appSchema.table(
     rootAccountId: uuid('root_account_id').references(
       (): AnyPgColumn => accounts.id,
     ),
+    // Set when the organization came from a promotion to Platinum (decision
+    // 87): the schema it was detached from, who promoted whom and when, and
+    // the person's sponsor in the source organization. All null for an
+    // organization founded by a Platinum link.
+    sourceSchema: text('source_schema').references(
+      (): AnyPgColumn => orgSchemas.name,
+    ),
+    promotedBy: uuid('promoted_by').references((): AnyPgColumn => accounts.id),
+    promotedAt: timestamp('promoted_at', { withTimezone: true }),
+    previousRecommenderId: uuid('previous_recommender_id').references(
+      (): AnyPgColumn => accounts.id,
+    ),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
-  (t) => [check('org_schemas_name_format', sql`${t.name} ~ '^org_[0-9a-f]{8}$'`)],
+  (t) => [
+    check('org_schemas_name_format', sql`${t.name} ~ '^org_[0-9a-f]{8}$'`),
+    check(
+      'org_schemas_promotion_shape',
+      sql`(${t.sourceSchema} is null) = (${t.promotedBy} is null) and (${t.sourceSchema} is null) = (${t.promotedAt} is null)`,
+    ),
+  ],
 );
 
 // Global directory of accounts. It guarantees global uniqueness of e-mail and
