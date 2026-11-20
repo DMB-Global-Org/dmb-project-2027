@@ -1,16 +1,25 @@
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import {
+  MAIL_TRANSPORT,
+  type MailTransport,
+} from '../../src/mail/mail.types.js';
 import request from 'supertest';
 import { testDatabaseUrl } from './config.js';
 
 /** The whole application against the test database. */
-export async function createTestApp(): Promise<INestApplication> {
+export async function createTestApp(
+  options: { mailTransport?: MailTransport } = {},
+): Promise<INestApplication> {
   process.env.DATABASE_URL = testDatabaseUrl();
   // Imported late: the module validates the environment when it is loaded.
   const { AppModule } = await import('../../src/app.module.js');
-  const moduleRef = await Test.createTestingModule({
-    imports: [AppModule],
-  }).compile();
+  const builder = Test.createTestingModule({ imports: [AppModule] });
+  // Capture outgoing mail instead of logging it.
+  if (options.mailTransport) {
+    builder.overrideProvider(MAIL_TRANSPORT).useValue(options.mailTransport);
+  }
+  const moduleRef = await builder.compile();
   const app = moduleRef.createNestApplication();
   await app.init();
   return app;

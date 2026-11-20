@@ -35,6 +35,12 @@ services:
         sync: false
       - key: APP_BASE_URL # public address of the frontend, e.g. https://dmb-project-2027.vercel.app
         sync: false
+      - key: MAIL_DRIVER # console (log only) until the sending domain is set up, then mailersend
+        value: console
+      - key: MAILERSEND_API_KEY # only with MAIL_DRIVER=mailersend
+        sync: false
+      - key: MAIL_FROM_EMAIL # verified sender address, only with MAIL_DRIVER=mailersend
+        sync: false
       - key: TRUST_PROXY_HOPS # reverse proxies in front of the app: 1 = Render only, 2 = Vercel rewrite + Render
         sync: false
       - key: CORS_ORIGINS # e.g. https://dmb-project-2027.vercel.app

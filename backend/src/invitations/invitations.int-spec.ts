@@ -20,8 +20,11 @@ import {
   accounts,
   auditLog,
   invitations,
+  notifications,
   orgSchemas,
 } from '../db/schema/index.js';
+import type { MailMessage } from '../mail/mail.types.js';
+import { OutboxDispatcher } from '../mail/outbox-dispatcher.js';
 import { hashInvitationToken } from './invitation-token.js';
 
 const CREATE = `mutation ($input: CreateInvitationInput!) {
@@ -48,6 +51,7 @@ const tokenOf = (url: string) => url.split('/register/')[1]!;
 describe('invitations and registration (integration)', () => {
   let app: INestApplication;
   let testDb: TestDb;
+  const mailbox: MailMessage[] = [];
 
   const anonymous = () => request(app.getHttpServer());
   const agentFor = async (email: string): Promise<Agent> => {
@@ -107,7 +111,14 @@ describe('invitations and registration (integration)', () => {
 
   beforeAll(async () => {
     testDb = createTestDb();
-    app = await createTestApp();
+    app = await createTestApp({
+      mailTransport: {
+        send: (message) => {
+          mailbox.push(message);
+          return Promise.resolve();
+        },
+      },
+    });
   });
 
   afterAll(async () => {
@@ -755,6 +766,114 @@ describe('invitations and registration (integration)', () => {
 
       expect(results.filter((r) => !r.errors)).toHaveLength(1);
       expect(await schemaCount()).toBe(before + 1);
+    });
+  });
+
+  describe('sending the link by e-mail', () => {
+    const queuedFor = (email: string) =>
+      testDb.db
+        .select()
+        .from(notifications)
+        .where(eq(notifications.recipientEmail, email));
+
+    it('queues nothing unless asked: the inviter shares the link themselves', async () => {
+      const { a } = await newOrg();
+      const email = uniqueEmail();
+
+      await link(await agentFor(a.email), { recipientEmail: email });
+
+      expect(await queuedFor(email)).toHaveLength(0);
+    });
+
+    it('queues the message together with the invitation', async () => {
+      const { a } = await newOrg();
+      const email = uniqueEmail();
+
+      const { id } = await link(await agentFor(a.email), {
+        recipientEmail: email,
+        locale: 'de',
+        sendEmail: true,
+      });
+
+      const queued = await queuedFor(email);
+      expect(queued).toHaveLength(1);
+      expect(queued[0]).toMatchObject({
+        type: 'invitation',
+        locale: 'de',
+        status: 'PENDING',
+      });
+      const [entry] = await testDb.db
+        .select()
+        .from(auditLog)
+        .where(
+          and(
+            eq(auditLog.objectId, id),
+            eq(auditLog.action, 'invitation.create'),
+          ),
+        );
+      expect(entry?.after).toMatchObject({ emailQueued: true });
+    });
+
+    it('delivers a link that opens the registration', async () => {
+      const { org, a } = await newOrg();
+      const email = uniqueEmail();
+      await link(await agentFor(a.email), {
+        recipientEmail: email,
+        locale: 'en',
+        sendEmail: true,
+      });
+
+      await app.get(OutboxDispatcher).runOnce();
+
+      const mail = mailbox.find((m) => m.to === email);
+      expect(mail?.subject).toBe('Invitation to dMb Projekt 2027');
+      const token = /\/register\/([\w-]+)/.exec(mail!.text)![1]!;
+      // Following the link from the e-mail really registers the person.
+      const body = await register(anonymous(), token, { email });
+      expect(body.errors).toBeUndefined();
+      const [account] = await testDb.db
+        .select()
+        .from(accounts)
+        .where(eq(accounts.email, email));
+      expect(account?.orgSchema).toBe(org);
+      // And the secret link no longer sits in the outbox.
+      expect((await queuedFor(email))[0]).toMatchObject({
+        status: 'SENT',
+        payload: null,
+      });
+    });
+
+    it('needs an e-mail address to send to', async () => {
+      const { a } = await newOrg();
+
+      const body = await gql(await agentFor(a.email), CREATE, {
+        input: {
+          kind: 'PARTNER',
+          recipientPhone: '+48 600 100 200',
+          sendEmail: true,
+        },
+      });
+
+      expect(errorOf(body)).toMatchObject({
+        code: 'VALIDATION_FAILED',
+        field: 'recipientEmail',
+      });
+    });
+
+    it('sends nothing for an invitation that was refused', async () => {
+      const { org, root } = await newOrg();
+      const pending = await createPartner(testDb, org, {
+        recommenderId: root.accountId,
+        state: 'PENDING_ACTIVATION',
+      });
+      const email = uniqueEmail();
+
+      const body = await gql(await agentFor(pending.email), CREATE, {
+        input: { kind: 'PARTNER', recipientEmail: email, sendEmail: true },
+      });
+
+      expect(errorOf(body)?.code).toBe('FORBIDDEN');
+      expect(await queuedFor(email)).toHaveLength(0);
     });
   });
 });

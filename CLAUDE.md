@@ -9,7 +9,7 @@ Właściciel produktu: Marek Kustosz. Rozmawiamy po polsku.
 ## Gdzie są wymagania
 
 - `docs/specyfikacja.md`: obowiązująca specyfikacja (role, uprawnienia, konta, Kontakty, mailing, model danych, RODO). Czytaj ją przed każdą większą zmianą.
-- `docs/ustalenia-i-kontekst.md`: dziennik decyzji 1–82 (które są zastąpione i dlaczego).
+- `docs/ustalenia-i-kontekst.md`: dziennik decyzji 1–83 (które są zastąpione i dlaczego).
 - `docs/funkcjonalnosci-2026-10-30.md`: zakres na termin **30.11.2026** (wersja DE obok).
 - Nie zgaduj reguł biznesowych. Gdy specyfikacja milczy albo jest niejasna, zapytaj i zaproponuj dopisanie decyzji do `docs/`.
 
@@ -20,7 +20,7 @@ Monorepo pnpm + Turborepo (`pnpm-workspace.yaml`: `frontend`, `backend`), Node >
 - `backend/`: NestJS 12, GraphQL (Apollo, code-first, schemat zapisywany do `backend/schema.gql`), Drizzle ORM + `postgres` (postgres.js), walidacja env przez zod (`src/config/env.ts`), testy Vitest, lint oxlint. Moduł `notes` to przykład z szablonu; można go usunąć, gdy powstaną właściwe moduły.
 - `frontend/`: Next.js 16 (App Router), React 19, Tailwind 4, shadcn/ui (Base UI), zustand. Przed pisaniem kodu Next.js przeczytaj `frontend/AGENTS.md`.
 - Baza: Supabase Postgres. Tabele aplikacji w schemacie `app` (`backend/src/db/schema/app.schema.ts`); nigdy nie zmieniaj schematów Supabase (`auth`, `storage` itd.).
-- Uwierzytelnianie: własne, w backendzie (nie Supabase Auth; decyzja 63). E-mail: MailerSend (decyzja 67).
+- Uwierzytelnianie: własne, w backendzie (nie Supabase Auth; decyzja 63). E-mail: MailerSend (decyzja 67) przez skrzynkę nadawczą `app.notifications` (decyzja 83); wiadomości zawsze kolejkuj w transakcji operacji (`OutboxService.enqueue(tx, ...)`), nie wysyłaj bezpośrednio.
 - Wdrożenie: backend na Render (`render.yaml`), frontend na Vercel; migracje uruchamia workflow `.github/workflows/db-migrate.yml` po pushu do `main`.
 
 ## Komendy (z katalogu głównego)

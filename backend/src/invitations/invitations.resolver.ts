@@ -1,11 +1,9 @@
 import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
-import { ConfigService } from '@nestjs/config';
 import { Public } from '../auth/public.decorator.js';
 import type { AuthContext, GqlContext } from '../auth/auth.types.js';
 import { requestMeta } from '../auth/cookies.js';
 import { RequireAuth } from '../auth/current-actor.decorator.js';
 import { appError } from '../common/graphql-error.js';
-import type { Env } from '../config/env.js';
 import {
   CreatedInvitation,
   CreateInvitationInput,
@@ -20,10 +18,7 @@ import { InvitationsService } from './invitations.service.js';
 
 @Resolver(() => Invitation)
 export class InvitationsResolver {
-  constructor(
-    private readonly invitations: InvitationsService,
-    private readonly config: ConfigService<Env, true>,
-  ) {}
+  constructor(private readonly invitations: InvitationsService) {}
 
   /** Creates a registration link; the permission engine decides who may. */
   @Mutation(() => CreatedInvitation)
@@ -38,16 +33,12 @@ export class InvitationsResolver {
         field: firstInvalidField(parsed.error),
       });
     }
-    const { invitation, token } = await this.invitations.create(
+    const { invitation, url } = await this.invitations.create(
       auth,
       parsed.data,
       requestMeta(ctx.req),
     );
-    const baseUrl = this.config.get('APP_BASE_URL', { infer: true });
-    return {
-      invitation: Invitation.from(invitation),
-      url: `${baseUrl}/register/${token}`,
-    };
+    return { invitation: Invitation.from(invitation), url };
   }
 
   /** The links the logged-in account created. */
