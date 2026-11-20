@@ -39,9 +39,19 @@ export interface Account {
   status: PartnerStatus;
   state: AccountState;
   profileCompleted: boolean;
+  recommenderId: string | null;
   isOrgRoot: boolean;
+  removed: boolean;
   allowedActions: string[];
   assignableRoles: Role[];
+}
+
+export interface RecommenderCandidate {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  depth: number;
 }
 
 export interface StructureEntry {

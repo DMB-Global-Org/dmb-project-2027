@@ -1,5 +1,5 @@
 export const ACCOUNT_FIELDS = `id email firstName lastName phone partnerNumber partnerCountry
-  role status state profileCompleted isOrgRoot allowedActions assignableRoles`;
+  role status state profileCompleted recommenderId isOrgRoot removed allowedActions assignableRoles`;
 
 export const VIEWER_QUERY = "query { viewer { id email role state locale } }";
 export const STRUCTURE_QUERY = `query { structure { depth account { ${ACCOUNT_FIELDS} } } }`;
@@ -21,3 +21,21 @@ export const CREATE_INVITATION_MUTATION = `mutation ($input: CreateInvitationInp
   createInvitation(input: $input) { url invitation { id } } }`;
 export const REVOKE_INVITATION_MUTATION = `mutation ($id: ID!) {
   revokeInvitation(id: $id) { id } }`;
+
+export const ACCOUNT_QUERY = `query ($id: ID!) { account(id: $id) { ${ACCOUNT_FIELDS} } }`;
+export const CANDIDATES_QUERY = `query ($id: ID!) {
+  recommenderCandidates(id: $id) { id email firstName lastName depth } }`;
+export const ACTIVATE_MUTATION = "mutation ($id: ID!) { activateAccount(id: $id) { id } }";
+export const DEACTIVATE_MUTATION = "mutation ($id: ID!) { deactivateAccount(id: $id) { id } }";
+export const CHANGE_ROLE_MUTATION = `mutation ($id: ID!, $role: Role!) {
+  changeAccountRole(id: $id, role: $role) { id } }`;
+export const CHANGE_STATUS_MUTATION = `mutation ($id: ID!, $status: PartnerStatus!) {
+  changeAccountStatus(id: $id, status: $status) { id } }`;
+export const UPDATE_ACCOUNT_DATA_MUTATION = `mutation ($id: ID!, $input: UpdateAccountDataInput!) {
+  updateAccountData(id: $id, input: $input) { id } }`;
+export const UPDATE_PARTNER_NUMBER_MUTATION = `mutation ($id: ID!, $input: PartnerNumberInput!) {
+  updatePartnerNumber(id: $id, input: $input) { id } }`;
+export const CHANGE_RECOMMENDER_MUTATION = `mutation ($id: ID!, $recommenderId: ID!) {
+  changeAccountRecommender(id: $id, recommenderId: $recommenderId) { id } }`;
+export const REMOVE_ACCOUNT_MUTATION =
+  "mutation ($id: ID!) { removeAccountFromStructure(id: $id) }";

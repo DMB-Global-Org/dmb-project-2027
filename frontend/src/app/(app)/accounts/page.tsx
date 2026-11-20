@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -50,7 +51,9 @@ export default async function AccountsPage() {
                 <TableCell>
                   {/* Indentation shows who stands below whom. */}
                   <div style={{ paddingLeft: `${depth * 1.25}rem` }}>
-                    <div className="font-medium">{displayName(account)}</div>
+                    <Link href={`/accounts/${account.id}`} className="font-medium hover:underline">
+                      {displayName(account)}
+                    </Link>
                     {(account.firstName || account.lastName) && (
                       <div className="text-xs text-muted-foreground">{account.email}</div>
                     )}
