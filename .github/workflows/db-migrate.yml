@@ -2,7 +2,7 @@ name: DB migrate
 
 on:
   push:
-    branches: [main]
+    branches: [production]
     paths:
       - backend/drizzle/**
       - backend/drizzle.config.ts

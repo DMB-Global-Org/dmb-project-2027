@@ -5,7 +5,7 @@ services:
     runtime: node
     region: frankfurt # closest to Supabase eu-west-1
     plan: free
-    branch: main
+    branch: production
     # Deploy only after GitHub checks (incl. the DB migration workflow) have passed.
     autoDeployTrigger: checksPass
     # The whole monorepo is checked out; build only the backend workspace.
