@@ -1,6 +1,9 @@
 // Creates the SuperAdministrator account (run once after the first deploy):
 //   SUPERADMIN_EMAIL=... SUPERADMIN_PASSWORD=... pnpm --filter backend create-superadmin
 // Add --reset-password to set a new password for an existing account.
+// Without putting the password in the shell history: keep the three variables in
+// backend/.env.superadmin (git-ignored) and run `pnpm --filter backend create-superadmin:file`.
+// Variables from that file win over backend/.env.
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { ensureSuperAdmin } from '../auth/superadmin.js';
