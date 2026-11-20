@@ -106,3 +106,57 @@ describe('profile completed e-mail', () => {
     expect(mail.html).toContain('&lt;b&gt;Anna&lt;/b&gt;');
   });
 });
+
+describe('sponsor changed e-mail', () => {
+  const base = { personName: 'Anna Nowak', recommenderName: 'Jan Kowalski' };
+
+  it.each([
+    ['pl', 'Zmiana rekomendującego w dMb Projekt 2027'],
+    ['de', 'Änderung des Empfehlenden in dMb Projekt 2027'],
+    ['en', 'Change of sponsor in dMb Projekt 2027'],
+  ])('is written in %s', (locale, subject) => {
+    const mail = renderMail(
+      'recommenderChanged',
+      { ...base, variant: 'moved' },
+      locale,
+      'a@b.pl',
+    );
+    expect(mail.subject).toBe(subject);
+    expect(mail.text).toContain('Jan Kowalski');
+  });
+
+  it('tells the moved person who the sponsor is and the sponsor who arrived', () => {
+    const moved = renderMail(
+      'recommenderChanged',
+      { ...base, variant: 'moved' },
+      'en',
+      'a@b.pl',
+    );
+    const arrived = renderMail(
+      'recommenderChanged',
+      { ...base, variant: 'newRecommender' },
+      'en',
+      'j@b.pl',
+    );
+    expect(moved.text).toContain('Your sponsor');
+    expect(moved.text).toContain('Jan Kowalski');
+    expect(moved.text).not.toContain('Anna Nowak');
+    expect(arrived.text).toContain('Anna Nowak is now in your downline');
+  });
+
+  it('falls back to Polish and escapes names in the HTML part', () => {
+    const mail = renderMail(
+      'recommenderChanged',
+      {
+        variant: 'newRecommender',
+        personName: '<b>x</b>',
+        recommenderName: 'y',
+      },
+      'fr',
+      'a@b.pl',
+    );
+    expect(mail.subject).toContain('Zmiana rekomendującego');
+    expect(mail.html).toContain('&lt;b&gt;x&lt;/b&gt;');
+    expect(mail.html).not.toContain('<b>x</b>');
+  });
+});

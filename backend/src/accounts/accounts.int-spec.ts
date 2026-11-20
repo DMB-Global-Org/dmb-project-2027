@@ -784,6 +784,8 @@ describe('account administration (integration)', () => {
         'CHANGE_ROLE',
         'CHANGE_STATUS',
         'UPDATE_ACCOUNT',
+        'CHANGE_RECOMMENDER',
+        'REMOVE_FROM_STRUCTURE',
       ]);
       expect(active.assignableRoles).toEqual([
         'FOUNDATION',

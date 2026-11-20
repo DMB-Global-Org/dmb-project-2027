@@ -36,6 +36,8 @@ export const ACCOUNT_ACTIONS = [
   'CHANGE_STATUS',
   'UPDATE_ACCOUNT',
   'CHANGE_PARTNER_NUMBER',
+  'CHANGE_RECOMMENDER',
+  'REMOVE_FROM_STRUCTURE',
 ] as const;
 export type AccountAction = (typeof ACCOUNT_ACTIONS)[number];
 export const AccountActionEnum = enumObject(ACCOUNT_ACTIONS);
@@ -84,6 +86,10 @@ export class AccountNode {
   @Field()
   isOrgRoot!: boolean;
 
+  /** Removed from the structure (only a SuperAdministrator still sees such an account). */
+  @Field()
+  removed!: boolean;
+
   @Field(() => Date)
   createdAt!: Date;
 
@@ -94,6 +100,26 @@ export class AccountNode {
   /** Roles the caller may give this account; empty when none. */
   @Field(() => [RoleEnum])
   assignableRoles!: Role[];
+}
+
+/** A person a member may be moved under (see `recommenderCandidates`). */
+@ObjectType()
+export class RecommenderCandidate {
+  @Field(() => ID)
+  id!: string;
+
+  @Field()
+  email!: string;
+
+  @Field(() => String, { nullable: true })
+  firstName!: string | null;
+
+  @Field(() => String, { nullable: true })
+  lastName!: string | null;
+
+  /** Depth below the top of what the caller sees (for the indentation of a list). */
+  @Field(() => Int)
+  depth!: number;
 }
 
 /** One line of the structure: the account and its depth below the caller (0 = caller). */

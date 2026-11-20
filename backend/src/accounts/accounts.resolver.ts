@@ -11,6 +11,7 @@ import {
   MyProfile,
   PartnerNumberInput,
   PartnerStatusEnum,
+  RecommenderCandidate,
   RoleEnum,
   StructureEntry,
   UpdateAccountDataInput,
@@ -150,5 +151,44 @@ export class AccountsResolver {
       parseInput(partnerNumberSchema, input),
       requestMeta(ctx.req),
     );
+  }
+
+  /** Moves a person, with their downline, under another sponsor of the same organization. */
+  @Mutation(() => AccountNode)
+  changeAccountRecommender(
+    @Args('id', { type: () => ID }) id: string,
+    @Args('recommenderId', { type: () => ID }) recommenderId: string,
+    @RequireAuth() auth: AuthContext,
+    @Context() ctx: GqlContext,
+  ): Promise<AccountNode> {
+    return this.accounts.changeRecommender(
+      auth,
+      parseId(id),
+      parseId(recommenderId),
+      requestMeta(ctx.req),
+    );
+  }
+
+  /** Takes a person out of the structure; their downline moves up to their sponsor. */
+  @Mutation(() => Boolean)
+  removeAccountFromStructure(
+    @Args('id', { type: () => ID }) id: string,
+    @RequireAuth() auth: AuthContext,
+    @Context() ctx: GqlContext,
+  ): Promise<boolean> {
+    return this.accounts.removeFromStructure(
+      auth,
+      parseId(id),
+      requestMeta(ctx.req),
+    );
+  }
+
+  /** Whom the person could be moved under. */
+  @Query(() => [RecommenderCandidate])
+  recommenderCandidates(
+    @Args('id', { type: () => ID }) id: string,
+    @RequireAuth() auth: AuthContext,
+  ): Promise<RecommenderCandidate[]> {
+    return this.accounts.recommenderCandidates(auth, parseId(id));
   }
 }

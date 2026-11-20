@@ -1,11 +1,16 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { asc, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
 import { AuditService } from '../audit/audit.service.js';
 import type { AuthContext, RequestMeta } from '../auth/auth.types.js';
 import { SessionService } from '../auth/session.service.js';
 import { can } from '../authz/can.js';
-import type { Actor, Decision, TargetFacts } from '../authz/types.js';
+import type {
+  Actor,
+  Decision,
+  NewRecommenderFacts,
+  TargetFacts,
+} from '../authz/types.js';
 import { appError } from '../common/graphql-error.js';
 import type { Env } from '../config/env.js';
 import { DB, type Database } from '../db/database.tokens.js';
@@ -34,6 +39,7 @@ import {
   type AccountAction,
   type AccountNode,
   type MyProfile,
+  type RecommenderCandidate,
   type StructureEntry,
 } from './account.models.js';
 import type {
@@ -54,6 +60,15 @@ interface AccountRow {
   partnerNumber: string | null;
   partnerCountry: string | null;
 }
+
+/** A new sponsor who passes every check; used to ask `can` whether moving is possible at all. */
+const ANY_VALID_RECOMMENDER: NewRecommenderFacts = {
+  actorIsAncestorOrSelf: true,
+  state: 'ACTIVE',
+  removed: false,
+  sameOrgAsTarget: true,
+  isTargetOrInTargetSubtree: false,
+};
 
 const fullName = (first: string | null, last: string | null): string =>
   [first, last].filter(Boolean).join(' ');
@@ -111,7 +126,7 @@ export class AccountsService {
         const facts: TargetFacts = {
           role: row.partner.role,
           state: row.partner.state,
-          removed: false,
+          removed: row.partner.removedAt !== null,
           isSelf,
           sameOrg: !superAdmin,
           // Everybody in the downline is below the caller by construction.
@@ -450,6 +465,224 @@ export class AccountsService {
     return this.viewAfterChange(auth, id);
   }
 
+  /**
+   * Moves a person, with their whole downline, under another sponsor of the
+   * same organization (decision 71). `invited_by_id` never changes; the old
+   * sponsor stays in the log. The moved person and the new sponsor are told.
+   */
+  async changeRecommender(
+    auth: AuthContext,
+    id: string,
+    newRecommenderId: string,
+    meta: RequestMeta,
+  ): Promise<AccountNode> {
+    await this.tx.run(async (tx) => {
+      await this.lockOrgOf(tx, id);
+      const target = await this.lockTarget(auth, id, tx);
+      const facts = await this.relations.newRecommenderFacts(
+        auth,
+        target,
+        newRecommenderId,
+        tx,
+      );
+      // An unknown sponsor and one the caller cannot name look the same.
+      if (!facts) throw appError('NOT_FOUND');
+      assertAllowed(
+        can(auth.actor, {
+          action: 'CHANGE_RECOMMENDER',
+          target: target.facts,
+          newRecommender: facts,
+        }),
+      );
+      // Moving somebody under the sponsor they already have changes nothing.
+      if (target.partner.recommenderId === newRecommenderId) return;
+
+      const { partners } = orgTables(target.orgSchema);
+      await tx
+        .update(partners)
+        .set({ recommenderId: newRecommenderId })
+        .where(eq(partners.accountId, id));
+      await this.audit.record(tx, {
+        actorAccountId: auth.accountId,
+        action: 'account.recommender.change',
+        objectType: 'account',
+        objectId: id,
+        subjectAccountId: id,
+        before: { recommenderId: target.partner.recommenderId },
+        after: { recommenderId: newRecommenderId },
+        meta,
+      });
+
+      const moved = await this.contact(tx, target.orgSchema, id);
+      const sponsor = await this.contact(
+        tx,
+        target.orgSchema,
+        newRecommenderId,
+      );
+      if (moved && sponsor) {
+        await this.outbox.enqueue(tx, {
+          type: 'recommenderChanged',
+          recipientEmail: moved.email,
+          locale: moved.locale,
+          payload: {
+            variant: 'moved',
+            personName: moved.name,
+            recommenderName: sponsor.name,
+          },
+        });
+        await this.outbox.enqueue(tx, {
+          type: 'recommenderChanged',
+          recipientEmail: sponsor.email,
+          locale: sponsor.locale,
+          payload: {
+            variant: 'newRecommender',
+            personName: moved.name,
+            recommenderName: sponsor.name,
+          },
+        });
+      }
+    });
+    return this.viewAfterChange(auth, id);
+  }
+
+  /**
+   * Takes a person out of the structure (decisions 72 and 79): those they
+   * sponsored move up to their sponsor, the account is marked removed and
+   * deactivated and disappears from the tree. The row, e-mail and Partner
+   * number stay. Nobody is notified.
+   */
+  async removeFromStructure(
+    auth: AuthContext,
+    id: string,
+    meta: RequestMeta,
+    now = new Date(),
+  ): Promise<boolean> {
+    await this.tx.run(async (tx) => {
+      await this.lockOrgOf(tx, id);
+      const target = await this.lockTarget(auth, id, tx);
+      assertAllowed(
+        can(auth.actor, {
+          action: 'REMOVE_FROM_STRUCTURE',
+          target: target.facts,
+        }),
+      );
+      const parentId = target.partner.recommenderId;
+      // Not reachable: only the root of an organization has no sponsor.
+      if (!parentId) throw appError('FORBIDDEN', { reason: 'root_locked' });
+
+      const { partners } = orgTables(target.orgSchema);
+      const children = await tx
+        .select({ accountId: partners.accountId })
+        .from(partners)
+        .where(and(eq(partners.recommenderId, id), isNull(partners.removedAt)));
+      if (children.length > 0) {
+        await tx
+          .update(partners)
+          .set({ recommenderId: parentId })
+          .where(
+            and(eq(partners.recommenderId, id), isNull(partners.removedAt)),
+          );
+        for (const child of children) {
+          await this.audit.record(tx, {
+            actorAccountId: auth.accountId,
+            action: 'account.recommender.change',
+            objectType: 'account',
+            objectId: child.accountId,
+            subjectAccountId: child.accountId,
+            before: { recommenderId: id },
+            after: { recommenderId: parentId, reason: 'removal' },
+            meta,
+          });
+        }
+      }
+
+      await tx
+        .update(partners)
+        .set({
+          removedAt: now,
+          removedBy: auth.accountId,
+          removedRecommenderId: parentId,
+          recommenderId: null,
+          state: 'DEACTIVATED',
+        })
+        .where(eq(partners.accountId, id));
+      await this.sessions.revokeAllFor(id, tx);
+      await this.audit.record(tx, {
+        actorAccountId: auth.accountId,
+        action: 'account.remove',
+        objectType: 'account',
+        objectId: id,
+        subjectAccountId: id,
+        before: { recommenderId: parentId, state: target.partner.state },
+        after: {
+          removedAt: now,
+          removedRecommenderId: parentId,
+          state: 'DEACTIVATED',
+          movedDownline: children.map((child) => child.accountId),
+        },
+        meta,
+      });
+    });
+    return true;
+  }
+
+  /**
+   * Whom the person could be moved under: activated members of the caller's
+   * downline (a SuperAdministrator: of the whole organization), except the
+   * person, their downline and their current sponsor.
+   */
+  async recommenderCandidates(
+    auth: AuthContext,
+    id: string,
+  ): Promise<RecommenderCandidate[]> {
+    assertAllowed(can(auth.actor, { action: 'VIEW_STRUCTURE' }));
+    const target = await this.relations.targetFacts(auth, id);
+    if (!target || !this.visible(auth, target)) throw appError('NOT_FOUND');
+    assertAllowed(
+      can(auth.actor, {
+        action: 'CHANGE_RECOMMENDER',
+        target: target.facts,
+        newRecommender: ANY_VALID_RECOMMENDER,
+      }),
+    );
+
+    const scopeRoot =
+      auth.actor.role === 'SUPER_ADMINISTRATOR'
+        ? await this.orgRootId(target.orgSchema)
+        : auth.accountId;
+    if (!scopeRoot) return [];
+
+    const excluded = new Set(
+      (await this.relations.downline(target.orgSchema, id)).map(
+        (entry) => entry.accountId,
+      ),
+    );
+    if (target.partner.recommenderId)
+      excluded.add(target.partner.recommenderId);
+
+    const candidates = (
+      await this.relations.downline(target.orgSchema, scopeRoot)
+    ).filter((entry) => !excluded.has(entry.accountId));
+    // The current sponsor is excluded above, but the people above them are fine.
+    const rows = await this.rowsOf(
+      target.orgSchema,
+      candidates.map((entry) => entry.accountId),
+    );
+    return candidates.flatMap(({ accountId, depth }) => {
+      const row = rows.get(accountId);
+      if (!row || row.partner.state !== 'ACTIVE') return [];
+      return [
+        {
+          id: accountId,
+          email: row.email,
+          firstName: row.partner.firstName,
+          lastName: row.partner.lastName,
+          depth,
+        },
+      ];
+    });
+  }
+
   // ------------------------------------------------------------- helpers
 
   /**
@@ -466,6 +699,41 @@ export class AccountsService {
     });
     if (!loaded || !this.visible(auth, loaded)) throw appError('NOT_FOUND');
     return loaded;
+  }
+
+  /** Takes the structure lock of the organization the account belongs to. */
+  private async lockOrgOf(tx: Tx, accountId: string): Promise<void> {
+    const [account] = await tx
+      .select({ orgSchema: accounts.orgSchema })
+      .from(accounts)
+      .where(eq(accounts.id, accountId));
+    if (!account?.orgSchema) throw appError('NOT_FOUND');
+    await this.relations.lockOrg(tx, account.orgSchema);
+  }
+
+  /** Where to write to a person: their address, language and the name to show. */
+  private async contact(
+    tx: Tx,
+    orgSchema: string,
+    accountId: string,
+  ): Promise<{ email: string; locale: string; name: string } | null> {
+    const { partners } = orgTables(orgSchema);
+    const [row] = await tx
+      .select({
+        email: accounts.email,
+        locale: accounts.locale,
+        firstName: partners.firstName,
+        lastName: partners.lastName,
+      })
+      .from(partners)
+      .innerJoin(accounts, eq(accounts.id, partners.accountId))
+      .where(eq(partners.accountId, accountId));
+    if (!row) return null;
+    return {
+      email: row.email,
+      locale: row.locale,
+      name: fullName(row.firstName, row.lastName) || row.email,
+    };
   }
 
   /** Visible: oneself, the downline, or anybody for a SuperAdministrator. */
@@ -581,8 +849,18 @@ export class AccountsService {
     );
     const allowedActions = ACCOUNT_ACTIONS.filter(
       (action): action is AccountAction => {
-        if (action === 'CHANGE_ROLE') return assignableRoles.length > 0;
-        return can(actor, { action, target: facts }).allowed;
+        switch (action) {
+          case 'CHANGE_ROLE':
+            return assignableRoles.length > 0;
+          case 'CHANGE_RECOMMENDER':
+            return can(actor, {
+              action,
+              target: facts,
+              newRecommender: ANY_VALID_RECOMMENDER,
+            }).allowed;
+          default:
+            return can(actor, { action, target: facts }).allowed;
+        }
       },
     );
     const { partner } = row;
@@ -600,6 +878,7 @@ export class AccountsService {
       profileCompleted: partner.profileCompletedAt !== null,
       recommenderId: partner.recommenderId,
       isOrgRoot: facts.isOrgRoot,
+      removed: facts.removed,
       createdAt: partner.createdAt,
       allowedActions,
       assignableRoles,

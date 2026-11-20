@@ -77,7 +77,10 @@ export class RegistrationService {
         .for('update');
       if (
         !invitation ||
-        !(await this.invitations.inviterMayInvite(invitation.inviterAccountId))
+        !(await this.invitations.inviterMayInvite(
+          invitation.inviterAccountId,
+        )) ||
+        (await this.invitations.recommenderRemoved(invitation))
       ) {
         throw appError('INVITATION_INVALID');
       }

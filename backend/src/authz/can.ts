@@ -253,6 +253,8 @@ function canChangeRecommender(
 
   if (!newRecommender.sameOrgAsTarget) return deny('other_org');
   if (newRecommender.removed) return deny('recommender_removed');
+  // Like in invitations (decision 73): the new sponsor must be able to operate (decision 86).
+  if (newRecommender.state !== 'ACTIVE') return deny('recommender_not_active');
   if (newRecommender.isTargetOrInTargetSubtree) return deny('cycle');
   return ALLOW;
 }
