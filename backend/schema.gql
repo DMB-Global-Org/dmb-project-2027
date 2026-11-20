@@ -2,6 +2,20 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type Mutation {
+  login(email: String!, password: String!): Viewer!
+  logout: Boolean!
+}
+
 type Query {
   health: String!
+  viewer: Viewer
+}
+
+type Viewer {
+  email: String!
+  id: ID!
+  locale: String!
+  role: String!
+  state: String!
 }

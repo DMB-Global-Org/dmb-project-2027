@@ -25,6 +25,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
+    "create-superadmin": "tsx src/scripts/create-superadmin.ts",
     "db:check": "drizzle-kit check",
     "db:generate:org": "drizzle-kit generate --config=drizzle.org.config.ts",
     "db:migrate:orgs": "tsx src/db/org-migrator/cli.ts",
