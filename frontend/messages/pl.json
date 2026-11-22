@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "dMb Projekt 2027",
+    "name": "dMb Global Projekt 2027",
     "tagline": "Education and Coaching Program"
   },
   "common": {
@@ -223,7 +223,7 @@
     "empty": "Brak wysłanych wiadomości."
   },
   "home": {
-    "title": "Witaj w dMb Projekt 2027",
+    "title": "Witaj w dMb Global Projekt 2027",
     "signedOut": "Nie jesteś zalogowany.",
     "apiDown": "Brak połączenia z serwerem.",
     "login": "Zaloguj"
