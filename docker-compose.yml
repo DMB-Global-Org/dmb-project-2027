@@ -1,6 +1,8 @@
-# Local Postgres for backend integration tests (never touches Supabase).
+# Local Postgres (never touches Supabase).
 #   docker compose up -d --wait
-#   pnpm --filter backend test:int
+# postgres-test (5434): throwaway database for `pnpm test:int`; tests drop schemas.
+# postgres-dev  (5435): persistent database for trying the app on a copy of
+#   production data (see docs/wdrozenie.md, "Lokalna baza deweloperska").
 services:
   postgres-test:
     image: postgres:17-alpine
@@ -10,6 +12,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: dmb_test
+    # Many org_* schemas in one restore transaction need more than the default 64 locks.
+    command: ['postgres', '-c', 'max_locks_per_transaction=512']
     # Throwaway data: tests recreate every schema on each run.
     tmpfs:
       - /var/lib/postgresql/data
@@ -18,3 +22,24 @@ services:
       interval: 2s
       timeout: 3s
       retries: 15
+
+  postgres-dev:
+    image: postgres:17-alpine
+    ports:
+      - '5435:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: dmb_dev
+    command: ['postgres', '-c', 'max_locks_per_transaction=512']
+    # Persistent: survives `docker compose down` (remove with `down -v`).
+    volumes:
+      - dmb-dev-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d dmb_dev']
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+volumes:
+  dmb-dev-data:

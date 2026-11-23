@@ -56,6 +56,28 @@ Stan na 20.11.2026. Decyzje: 77 (schematy organizacji), 83 (poczta), 84 i 89 (fr
 4. Zmiana rekomendującego, mailing organizacyjny do jednej osoby, na koniec ewentualny awans do Platinum (odpięcie organizacji).
 5. W DevTools ciasteczko `__Host-sid` z `HttpOnly`, `Secure`, `SameSite=Lax` (także w Safari); w audycie (`app.audit_log`) kolumna `ip` pokazuje prawdziwy adres.
 
+## Backup i odtwarzanie (decyzja 90)
+
+- **Kopia:** `pnpm --filter backend db:backup` zapisuje `backend/_backup/<serwer>-<port>-<ref>-<baza>_<RRRR-MM-DD>_<GG-MM-SS>.zip` (zrzut SQL schematów `app`, `drizzle`, `org_*`). Używa `DATABASE_DIRECT_URL` (5432); `--url-env=NAZWA` wskazuje inną zmienną. Folder jest w `.gitignore`.
+- **Wymagania:** `pg_dump` i `psql` w wersji nie niższej niż serwer (`brew install libpq`; skrypt szuka też w `/opt/homebrew/opt/libpq/bin`), `zip` i `unzip` z systemu.
+- **Odtwarzanie:** `pnpm --filter backend db:restore [plik.zip]` (bez pliku: najnowsza kopia). Skrypt pokazuje host docelowy i wymaga jego wpisania (albo `--confirm-host=HOST`), potem wczytuje całość w jednej transakcji i nadpisuje tabele z kopii. Przy wielu schematach `org_*` transakcja może przekroczyć `max_locks_per_transaction` serwera („out of shared memory”): wtedy zwiększyć ten parametr albo użyć `--no-transaction` (bez atomowości). Na produkcji tylko świadomie; próby robić na lokalnej bazie (`docker compose up -d --wait`, `--url-env=DATABASE_URL_TEST`).
+- **Potwierdzenie:** wpisuje się `host:port` bazy docelowej (np. `localhost:5435`), nie samą nazwę hosta.
+- **`--wipe`:** przed wczytaniem kopii usuwa wszystkie schematy aplikacji (`app`, `drizzle`, `org_*`), więc schematy utworzone po zrobieniu kopii też znikają (prawdziwe cofnięcie stanu). Bez niego odtwarzane są tylko tabele obecne w kopii.
+- **Dane osobowe:** kopia zawiera Kontakty, zgody i log. Trzymać lokalnie, nie wysyłać i nie commitować; stare kopie usuwać.
+
+## Lokalna baza deweloperska (kopia produkcji)
+
+Trwały kontener `postgres-dev` (port 5435, baza `dmb_dev`, wolumen `dmb-dev-data`) służy do prób na kopii danych produkcyjnych. Jest osobny od `postgres-test` (port 5434), który testy integracyjne czyszczą. Domyślny adres lokalnej bazy to `postgres://postgres:postgres@localhost:5435/dmb_dev` (`DATABASE_URL_LOCAL`, nie wymaga wpisu w `.env`).
+
+1. Jednorazowo: `docker compose up -d --wait`, `cp backend/.env.docker.example backend/.env.docker` (wskazuje backend na lokalną bazę i `MAIL_DRIVER=console`; zmienne z tego pliku wygrywają z `backend/.env`).
+2. Kopia produkcji (tylko odczyt): `pnpm --filter backend db:backup`.
+3. Wgranie do lokalnej bazy: `pnpm --filter backend db:restore:local` (to samo co `db:restore --url-env=DATABASE_URL_LOCAL --wipe`); potwierdzić `localhost:5435`.
+4. Nowe migracje z bieżącej gałęzi na tej kopii: `pnpm --filter backend db:migrate:all:local`.
+5. Backend na lokalnej bazie: `pnpm --filter backend dev:local` (frontend jak zwykle, `API_URL` na `http://localhost:8000`).
+6. Punkt powrotu przed próbami: `pnpm --filter backend db:backup:local`; powrót: `pnpm --filter backend db:restore:local <plik.zip>` (bez pliku: najnowsza kopia w `_backup/`, więc przy powrocie do kopii produkcji wskazać jej plik).
+
+Uwagi: nigdy nie ustawiać `MAIL_DRIVER=mailersend` na kopii produkcji (prawdziwe adresy); po testach usunąć kopię i, jeśli niepotrzebna, bazę (`docker compose down -v`). Nie uruchamiać `dev:local` równolegle z `pnpm dev` na tym samym porcie.
+
 ## Znane pułapki
 
 - **Logowanie nie działa, `/api/graphql` zwraca 404 z `DNS_HOSTNAME_RESOLVED_PRIVATE`:** frontend zbudowano bez `API_URL` (nie ustawiona, nieprzebudowana albo odfiltrowana przez Turborepo). Ustawić zmienną w Vercelu, upewnić się, że jest w `turbo.json`, zrobić redeploy.

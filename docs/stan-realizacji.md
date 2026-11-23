@@ -17,6 +17,7 @@ Stan na 20.11.2026. Plan realizacji: konta (3 metody), administrowanie kontem, p
 | Mailing organizacyjny | adresaci według roli i zasięgu, wersje językowe, historia z dostarczaniem | 67, 78, 88 |
 | Frontend | logowanie, rejestracja z linku, profil, struktura, szczegóły konta z akcjami, zaproszenia, mailing, PL/DE/EN, jasny i ciemny motyw (granat i złoto) | 84 |
 | Wdrożenie | gałąź `production`, domena `project2027.dmbglobal.pl`, wersje w nagłówku | 89 |
+| Kopia zapasowa | ręczny `db:backup` (zip w `backend/_backup/`) i `db:restore` z potwierdzeniem hosta | 90 |
 
 ## Wycięte lub odroczone
 
@@ -28,7 +29,7 @@ Stan na 20.11.2026. Plan realizacji: konta (3 metody), administrowanie kontem, p
 
 - Test dymny na produkcji według `docs/wdrozenie.md`, weryfikacja adresu IP w logu, przegląd tłumaczeń DE i EN.
 - Decyzje i sprawy z sekcji „Sprawy otwarte” w `docs/ustalenia-i-kontekst.md`, w tym zatwierdzenie założeń roboczych z decyzji 82–89.
-- Poza kodem: plan MailerSend powyżej sandboxa, kopia bazy w Supabase, ochrona gałęzi `production`.
+- Poza kodem: plan MailerSend powyżej sandboxa, kopie bazy w Supabase (własna ręczna kopia: `db:backup`, decyzja 90), ochrona gałęzi `production`.
 
 ## Jakość
 

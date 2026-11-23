@@ -32,6 +32,8 @@ Monorepo pnpm + Turborepo (`pnpm-workspace.yaml`: `frontend`, `backend`), Node >
 - Tor organizacji (schematy `org_*`, decyzja 77): `pnpm --filter backend db:generate:org` (SQL z `backend/src/db/org/schema.ts` do `backend/drizzle-org/`), `pnpm --filter backend db:migrate:all` (najpierw `app`, potem każdy zarejestrowany schemat organizacji). Nigdy nie uruchamiaj `drizzle-kit migrate` z `drizzle.org.config.ts`.
 - Backend osobno: `pnpm --filter backend test`, `pnpm --filter backend test:e2e`
 - Testy integracyjne (prawdziwy Postgres): `docker compose up -d --wait`, potem `pnpm test:int`. Baza `dmb_test` na porcie 5434 (`DATABASE_URL_TEST`); nazwa bazy musi kończyć się na `_test`, bo testy kasują schematy. Pliki `*.int-spec.ts`.
+- Kopia zapasowa bazy (decyzja 90): `pnpm --filter backend db:backup` (zip w `backend/_backup/`, poza Gitem; nazwa z serwerem, datą i godziną), `pnpm --filter backend db:restore [plik.zip] [--url-env=NAZWA] [--confirm-host=HOST]` (nadpisuje tabele, wymaga potwierdzenia hosta). Wymaga `pg_dump` i `psql` (`brew install libpq`).
+- Lokalna baza deweloperska z kopią produkcji (decyzja 90): kontener `postgres-dev` (port 5435), `pnpm --filter backend db:restore:local` (z `--wipe`), `db:backup:local`, `db:migrate:all:local`, `dev:local` (zmienne z `backend/.env.docker`, wzór w `.env.docker.example`). Szczegóły w `docs/wdrozenie.md`.
 - Zmienne: `backend/.env` (`DATABASE_URL` = pooler 6543, `DATABASE_DIRECT_URL` = 5432 dla migracji), `frontend/.env.local` (`API_URL`, adres backendu; ustawiany przy budowaniu). Nie commituj plików `.env`.
 
 ## Słownik: pojęcia domenowe i nazwy w kodzie
