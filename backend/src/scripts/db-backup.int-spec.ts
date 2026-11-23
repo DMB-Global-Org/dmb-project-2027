@@ -20,6 +20,14 @@ describe.skipIf(!hasTools)('db:backup and db:restore (integration)', () => {
 
   beforeAll(async () => {
     testDb = createTestDb();
+    // Schemas left by other test files would make the restore transaction take
+    // more locks than a default server allows (max_locks_per_transaction = 64).
+    const left = await testDb.client<{ schema_name: string }[]>`
+      select schema_name from information_schema.schemata
+      where schema_name like 'org!_%' escape '!'`;
+    for (const { schema_name } of left) {
+      await testDb.client.unsafe(`drop schema "${schema_name}" cascade`);
+    }
     try {
       for (const f of readdirSync(BACKUP_DIR)) before.add(f);
     } catch {

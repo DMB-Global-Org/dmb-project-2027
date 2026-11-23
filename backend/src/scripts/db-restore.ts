@@ -114,6 +114,8 @@ const client = spawn(
 );
 // psql may exit early on an error; do not crash on the broken pipe.
 client.stdin.on('error', () => {});
+// ...and unzip must not block forever on a dead psql.
+client.on('close', () => unzip.kill());
 if (prelude) client.stdin.write(prelude);
 unzip.stdout.pipe(client.stdin);
 
