@@ -56,6 +56,13 @@ Stan na 20.11.2026. Decyzje: 77 (schematy organizacji), 83 (poczta), 84 i 89 (fr
 4. Zmiana rekomendującego, mailing organizacyjny do jednej osoby, na koniec ewentualny awans do Platinum (odpięcie organizacji).
 5. W DevTools ciasteczko `__Host-sid` z `HttpOnly`, `Secure`, `SameSite=Lax` (także w Safari); w audycie (`app.audit_log`) kolumna `ip` pokazuje prawdziwy adres.
 
+## Backup i odtwarzanie (decyzja 90)
+
+- **Kopia:** `pnpm --filter backend db:backup` zapisuje `backend/_backup/<serwer>-<port>-<ref>-<baza>_<RRRR-MM-DD>_<GG-MM-SS>.zip` (zrzut SQL schematów `app`, `drizzle`, `org_*`). Używa `DATABASE_DIRECT_URL` (5432); `--url-env=NAZWA` wskazuje inną zmienną. Folder jest w `.gitignore`.
+- **Wymagania:** `pg_dump` i `psql` w wersji nie niższej niż serwer (`brew install libpq`; skrypt szuka też w `/opt/homebrew/opt/libpq/bin`), `zip` i `unzip` z systemu.
+- **Odtwarzanie:** `pnpm --filter backend db:restore [plik.zip]` (bez pliku: najnowsza kopia). Skrypt pokazuje host docelowy i wymaga jego wpisania (albo `--confirm-host=HOST`), potem wczytuje całość w jednej transakcji i nadpisuje tabele z kopii. Przy wielu schematach `org_*` transakcja może przekroczyć `max_locks_per_transaction` serwera („out of shared memory”): wtedy zwiększyć ten parametr albo użyć `--no-transaction` (bez atomowości). Na produkcji tylko świadomie; próby robić na lokalnej bazie (`docker compose up -d --wait`, `--url-env=DATABASE_URL_TEST`).
+- **Dane osobowe:** kopia zawiera Kontakty, zgody i log. Trzymać lokalnie, nie wysyłać i nie commitować; stare kopie usuwać.
+
 ## Znane pułapki
 
 - **Logowanie nie działa, `/api/graphql` zwraca 404 z `DNS_HOSTNAME_RESOLVED_PRIVATE`:** frontend zbudowano bez `API_URL` (nie ustawiona, nieprzebudowana albo odfiltrowana przez Turborepo). Ustawić zmienną w Vercelu, upewnić się, że jest w `turbo.json`, zrobić redeploy.

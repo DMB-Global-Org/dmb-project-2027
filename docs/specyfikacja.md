@@ -228,6 +228,8 @@ Aplikacja nie przechowuje danych o zdrowiu. Przed testem MRA osoba podpisuje na 
 
 **Żądanie usunięcia danych**: dane osoby są nieodwracalnie anonimizowane we wszystkich miejscach (konto, Kontakty, wartości „przed i po” oraz adresy IP w logu), a zapisy logu zostają. Historia zdarzeń pozostaje, ale nie da się już ustalić, kogo dotyczyła.
 
+**Kopie zapasowe** (decyzja 90): ręczny zrzut bazy (schematy `app`, `drizzle`, `org_*`) do zip w `backend/_backup/`, poza Gitem. Kopia zawiera dane osobowe, więc zostaje na lokalnym dysku właściciela; po anonimizacji na żądanie starsze kopie wciąż zawierają dane, dlatego po przywróceniu kopii anonimizację trzeba powtórzyć, a stare kopie usuwać według retencji (otwarte pytanie).
+
 Przed wdrożeniem te ustalenia warto potwierdzić z prawnikiem.
 
 ## Otwarte pytania
@@ -238,6 +240,7 @@ Przed wdrożeniem te ustalenia warto potwierdzić z prawnikiem.
 - [ ] Plan MailerSend: konto jest zatwierdzone, ale w planie sandbox (100 wiadomości, 10 na minutę); przed realnym startem i większymi mailingami potrzebny płatny plan.
 - [ ] Czy numer rekomendującego Platyny ma własne pole kraju (domyślnie kraj właściciela konta)?- [ ] Kto aktywuje i dezaktywuje samą Platynę: jest korzeniem własnej organizacji, więc raczej nie może zrobić tego sobie; specyfikacja nie rozstrzyga (rekomendacja: SuperAdministrator lub Administrator w górnej linii).
 - [ ] Kanał weryfikacji telefonu (SMS lub WhatsApp): wybór przy budowie, według dostępności i ceny usług.
+- [ ] Retencja i usuwanie kopii zapasowych bazy po żądaniu usunięcia danych (decyzja 90).
 - [ ] Z prawnikiem: znacznik oświadczenia MRA, anonimizacja przy żądaniu usunięcia danych, przechowywanie logu bez usuwania.
 
 Wszystkie wcześniejsze pytania są rozstrzygnięte; historia decyzji jest w `docs/ustalenia-i-kontekst.md`.
