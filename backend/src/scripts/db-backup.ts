@@ -13,6 +13,7 @@ import {
   findPgTool,
   isOwnedSchema,
   pgDumpArgs,
+  resolveDbUrl,
   splitConnection,
 } from './db-backup.lib.js';
 
@@ -26,8 +27,7 @@ const urlEnv =
   process.argv
     .find((a) => a.startsWith('--url-env='))
     ?.slice('--url-env='.length) ?? 'DATABASE_DIRECT_URL';
-const url = process.env[urlEnv];
-if (!url) throw new Error(`${urlEnv} is not set`);
+const url = resolveDbUrl(urlEnv);
 
 const sql = postgres(url, { max: 1, prepare: false, onnotice: () => {} });
 let schemas: string[];

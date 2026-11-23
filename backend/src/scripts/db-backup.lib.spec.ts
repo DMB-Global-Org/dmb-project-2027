@@ -1,10 +1,13 @@
 import {
+  DEFAULT_LOCAL_URL,
   backupBaseName,
   isOwnedSchema,
   pgDumpArgs,
+  resolveDbUrl,
   serverLabel,
   splitConnection,
   timestamp,
+  wipeSql,
 } from './db-backup.lib.js';
 
 describe('db-backup helpers', () => {
@@ -65,5 +68,27 @@ describe('db-backup helpers', () => {
     const { conninfo, env } = splitConnection('postgres://u:p%40ss@h:5432/db');
     expect(conninfo).not.toContain('p%40ss');
     expect(env.PGPASSWORD).toBe('p@ss');
+  });
+});
+
+describe('local database helpers', () => {
+  it('falls back to the docker-compose dev database for DATABASE_URL_LOCAL', () => {
+    expect(resolveDbUrl('DATABASE_URL_LOCAL', {})).toBe(DEFAULT_LOCAL_URL);
+    expect(
+      resolveDbUrl('DATABASE_URL_LOCAL', { DATABASE_URL_LOCAL: 'x://y' }),
+    ).toBe('x://y');
+  });
+
+  it('requires other variables to be set', () => {
+    expect(() => resolveDbUrl('DATABASE_DIRECT_URL', {})).toThrow(/not set/);
+  });
+
+  it('wipes only application schemas', () => {
+    const sql = wipeSql(['app', 'auth', 'org_a', 'public', 'drizzle']);
+    expect(sql).toContain('DROP SCHEMA IF EXISTS "app" CASCADE;');
+    expect(sql).toContain('"org_a"');
+    expect(sql).toContain('"drizzle"');
+    expect(sql).not.toContain('"auth"');
+    expect(sql).not.toContain('"public"');
   });
 });

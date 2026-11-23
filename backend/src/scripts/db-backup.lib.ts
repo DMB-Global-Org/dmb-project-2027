@@ -88,3 +88,29 @@ export async function findPgTool(name: 'pg_dump' | 'psql'): Promise<string> {
       `(binaries land in ${BREW_BIN[0]}), version >= the server's.`,
   );
 }
+
+/** Local development database from docker-compose.yml (service postgres-dev). */
+export const DEFAULT_LOCAL_URL =
+  'postgres://postgres:postgres@localhost:5435/dmb_dev';
+
+/**
+ * Connection string for `--url-env=NAME`. DATABASE_URL_LOCAL falls back to the
+ * docker-compose dev database, so the local database never needs backend/.env.
+ */
+export function resolveDbUrl(
+  urlEnv: string,
+  env: NodeJS.ProcessEnv = process.env,
+): string {
+  const url =
+    env[urlEnv] ?? (urlEnv === 'DATABASE_URL_LOCAL' ? DEFAULT_LOCAL_URL : '');
+  if (!url) throw new Error(`${urlEnv} is not set`);
+  return url;
+}
+
+/** SQL that drops the given application schemas (restore --wipe). */
+export function wipeSql(schemas: string[]): string {
+  return schemas
+    .filter(isOwnedSchema)
+    .map((s) => `DROP SCHEMA IF EXISTS "${s.replaceAll('"', '""')}" CASCADE;\n`)
+    .join('');
+}

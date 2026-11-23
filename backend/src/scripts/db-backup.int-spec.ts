@@ -61,7 +61,8 @@ describe.skipIf(!hasTools)('db:backup and db:restore (integration)', () => {
     expect(zip).toBeDefined();
 
     await sql.unsafe(`update "org_bak00001".marker set v = 'lost'`);
-    const host = new URL(url).hostname;
+    const u = new URL(url);
+    const host = `${u.hostname}:${u.port}`;
     await run(
       'pnpm',
       [
@@ -77,6 +78,46 @@ describe.skipIf(!hasTools)('db:backup and db:restore (integration)', () => {
 
     const rows = await sql.unsafe('select v from "org_bak00001".marker');
     expect(rows.map((r) => r.v)).toEqual(['kept']);
+  });
+
+  it('--wipe also removes schemas created after the backup', async () => {
+    const sql = testDb.client;
+    await run(
+      'pnpm',
+      [
+        'exec',
+        'tsx',
+        'src/scripts/db-backup.ts',
+        '--url-env=DATABASE_URL_TEST',
+      ],
+      { env },
+    );
+    const zip = readdirSync(BACKUP_DIR)
+      .filter((f) => f.endsWith('.zip') && !before.has(f))
+      .sort()
+      .at(-1) as string;
+
+    await sql.unsafe('create schema "org_bak00002"');
+    await sql.unsafe('create table "org_bak00002".t (v int)');
+    const u = new URL(url);
+    await run(
+      'pnpm',
+      [
+        'exec',
+        'tsx',
+        'src/scripts/db-restore.ts',
+        join(BACKUP_DIR, zip),
+        '--wipe',
+        '--url-env=DATABASE_URL_TEST',
+        `--confirm-host=${u.hostname}:${u.port}`,
+      ],
+      { env },
+    );
+
+    const rows = await sql.unsafe(
+      `select 1 from information_schema.schemata where schema_name = 'org_bak00002'`,
+    );
+    expect(rows).toHaveLength(0);
   });
 
   it('refuses to restore when the host is not confirmed', async () => {
