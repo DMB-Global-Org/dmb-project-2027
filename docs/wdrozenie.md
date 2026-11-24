@@ -45,7 +45,7 @@ Stan na 20.11.2026. Decyzje: 77 (schematy organizacji), 83 (poczta), 84 i 89 (fr
 
 ## Pierwsze uruchomienie (jednorazowo)
 
-1. Pierwszy SuperAdministrator: na Renderze w Shellu `SUPERADMIN_EMAIL=... SUPERADMIN_PASSWORD=... pnpm --filter backend create-superadmin` (idempotentne, `--reset-password` ustawia nowe hasło). Lokalnie wygodnie przez plik `backend/.env.superadmin` (poza gitem; po użyciu usunąć) i `create-superadmin:file`.
+1. Pierwszy SuperAdministrator: na Renderze w Shellu `SUPERADMIN_EMAIL=... SUPERADMIN_PASSWORD=... pnpm --filter backend create-superadmin` (idempotentne, `--reset-password` ustawia nowe hasło). Z tego komputera wygodnie przez `create-superadmin:file`: `backend/.env.superadmin` (tylko `SUPERADMIN_EMAIL` i `SUPERADMIN_PASSWORD`) oraz `backend/.env.production.local` (`DATABASE_URL`, `MAIL_FROM_EMAIL`, `MAILERSEND_API_KEY` produkcji); oba poza gitem.
 2. Schematy organizacji powstają przy rejestracji pierwszej Platyny (link rodzaju „Platyna” wystawia SuperAdministrator); ich migracje nakłada runner organizacji, a po wdrożeniach `db:migrate:all`.
 
 ## Test dymny na produkcji (ok. 10 minut)
@@ -69,12 +69,20 @@ Stan na 20.11.2026. Decyzje: 77 (schematy organizacji), 83 (poczta), 84 i 89 (fr
 
 Trwały kontener `postgres-dev` (port 5435, baza `dmb_dev`, wolumen `dmb-dev-data`) służy do prób na kopii danych produkcyjnych. Jest osobny od `postgres-test` (port 5434), który testy integracyjne czyszczą. Domyślny adres lokalnej bazy to `postgres://postgres:postgres@localhost:5435/dmb_dev` (`DATABASE_URL_LOCAL`, nie wymaga wpisu w `.env`).
 
-1. Jednorazowo: `docker compose up -d --wait`, `cp backend/.env.docker.example backend/.env.docker` (wskazuje backend na lokalną bazę i `MAIL_DRIVER=console`; zmienne z tego pliku wygrywają z `backend/.env`).
-2. Kopia produkcji (tylko odczyt): `pnpm --filter backend db:backup`.
-3. Wgranie do lokalnej bazy: `pnpm --filter backend db:restore:local` (to samo co `db:restore --url-env=DATABASE_URL_LOCAL --wipe`); potwierdzić `localhost:5435`.
-4. Nowe migracje z bieżącej gałęzi na tej kopii: `pnpm --filter backend db:migrate:all:local`.
-5. Backend na lokalnej bazie: `pnpm --filter backend dev:local` (frontend jak zwykle, `API_URL` na `http://localhost:8000`).
-6. Punkt powrotu przed próbami: `pnpm --filter backend db:backup:local`; powrót: `pnpm --filter backend db:restore:local <plik.zip>` (bez pliku: najnowsza kopia w `_backup/`, więc przy powrocie do kopii produkcji wskazać jej plik).
+Jedno wejście: `pnpm local <polecenie>` (z katalogu głównego; decyzja 91). Jednorazowo: `cp backend/.env.docker.example backend/.env.docker` (backend na lokalną bazę, `MAIL_DRIVER=console`) oraz `backend/.env.superadmin` z `SUPERADMIN_EMAIL` i `SUPERADMIN_PASSWORD`. Backend i frontend uruchamiasz osobno z IDE (`pnpm --filter backend dev:local`, frontend jak zwykle z `API_URL` na `http://localhost:8000`).
+
+| Polecenie | Co robi |
+| --- | --- |
+| `pnpm local up` | startuje kontener `postgres-dev`; gdy baza pusta, robi `pull` |
+| `pnpm local pull` | pobiera produkcję (tylko odczyt) do `_backup/prod/` i wgrywa lokalnie, zastępując dane lokalne |
+| `pnpm local snap [nazwa]` | snapshot lokalnej bazy do `_backup/local/` |
+| `pnpm local restore [nazwa]` | powrót do snapshotu (bez nazwy: ostatni) |
+| `pnpm local reset` | powrót do ostatniej kopii produkcji |
+| `pnpm local migrate` | migracje bieżącej gałęzi na lokalnej bazie |
+| `pnpm local empty` | struktura bez danych (czyszczenie, migracje) i SuperAdministrator z `.env.superadmin` |
+| `pnpm local down` / `nuke` | zatrzymanie (dane zostają) / usunięcie wolumenu i wszystkich kopii z dysku |
+
+Polecenia zapisują wyłącznie do `localhost:5435`, bez pytań o potwierdzenie hosta. Starsze skrypty (`db:backup`, `db:restore:local` itd.) nadal działają.
 
 Uwagi: nigdy nie ustawiać `MAIL_DRIVER=mailersend` na kopii produkcji (prawdziwe adresy); po testach usunąć kopię i, jeśli niepotrzebna, bazę (`docker compose down -v`). Nie uruchamiać `dev:local` równolegle z `pnpm dev` na tym samym porcie.
 

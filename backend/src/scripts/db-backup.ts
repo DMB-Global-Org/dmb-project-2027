@@ -2,6 +2,7 @@
 // Dumps the application schemas (app, drizzle, org_*) with pg_dump and packs the
 // SQL into backend/_backup/<server>_<YYYY-MM-DD>_<HH-MM-SS>.zip (git-ignored).
 // Uses DATABASE_DIRECT_URL (port 5432); `--url-env=NAME` picks another variable.
+// Options: --out-dir=DIR, --name=LABEL (used by `pnpm local snap`).
 // The backup contains personal data: keep it local, never commit or e-mail it.
 import { mkdirSync, rmSync, statSync } from 'node:fs';
 import { join } from 'node:path';
@@ -23,6 +24,9 @@ try {
   // no .env file
 }
 
+const arg = (name: string) =>
+  process.argv.find((a) => a.startsWith(`--${name}=`))?.slice(name.length + 3);
+
 const urlEnv =
   process.argv
     .find((a) => a.startsWith('--url-env='))
@@ -41,11 +45,13 @@ try {
 if (!schemas.includes('app')) throw new Error('Schema "app" not found');
 
 const pgDump = await findPgTool('pg_dump');
-const base = backupBaseName(url, new Date());
-const tmpDir = join(BACKUP_DIR, '.tmp');
+// --out-dir=DIR puts the zip elsewhere than _backup/; --name=LABEL adds a label to the file name.
+const outDir = arg('out-dir') ?? BACKUP_DIR;
+const base = backupBaseName(url, new Date(), arg('name'));
+const tmpDir = join(outDir, '.tmp');
 mkdirSync(tmpDir, { recursive: true });
 const sqlFile = join(tmpDir, `${base}.sql`);
-const zipFile = join(BACKUP_DIR, `${base}.zip`);
+const zipFile = join(outDir, `${base}.zip`);
 
 try {
   const { conninfo, env } = splitConnection(url);

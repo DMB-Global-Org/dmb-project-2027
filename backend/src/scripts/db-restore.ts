@@ -36,14 +36,17 @@ const url = resolveDbUrl(urlEnv);
 const wipe = process.argv.includes('--wipe');
 const noTransaction = process.argv.includes('--no-transaction');
 
+// --dir=DIR looks for the newest zip there instead of in _backup/.
+const searchDir = arg('dir') ?? BACKUP_DIR;
+
 function newestBackup(): string {
-  const zips = readdirSync(BACKUP_DIR)
+  const zips = readdirSync(searchDir)
     .filter((f) => f.endsWith('.zip'))
-    .map((f) => join(BACKUP_DIR, f));
+    .map((f) => join(searchDir, f));
   const newest = zips.sort(
     (a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs,
   )[0];
-  if (!newest) throw new Error(`No backups in ${BACKUP_DIR}`);
+  if (!newest) throw new Error(`No backups in ${searchDir}`);
   return newest;
 }
 

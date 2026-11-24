@@ -40,8 +40,12 @@ export function timestamp(date: Date): string {
   );
 }
 
-export function backupBaseName(url: string, date: Date): string {
-  return `${serverLabel(url)}_${timestamp(date)}`;
+export function backupBaseName(
+  url: string,
+  date: Date,
+  label?: string,
+): string {
+  return [serverLabel(url), label, timestamp(date)].filter(Boolean).join('_');
 }
 
 /** Arguments for a plain-SQL pg_dump of the given schemas (password via PGPASSWORD). */
