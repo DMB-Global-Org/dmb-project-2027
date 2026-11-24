@@ -86,6 +86,17 @@ Polecenia zapisują wyłącznie do `localhost:5435`, bez pytań o potwierdzenie 
 
 Dostęp do lokalnej bazy z klienta SQL (DataGrip w IDE itp.): host `localhost`, port `5435`, baza `dmb_dev`, użytkownik `postgres`, hasło `postgres`, SSL wyłączony; adres `postgres://postgres:postgres@localhost:5435/dmb_dev`. To dane lokalnego kontenera, nie konto w aplikacji (do logowania w aplikacji służy SuperAdministrator z `backend/.env.superadmin`). Tabele są w schemacie `app` i `org_*`, więc w kliencie włączyć wszystkie schematy (domyślnie widać tylko pusty `public`).
 
+### Który plik env jest używany (backend)
+
+| Plik | Kto go czyta | Zawartość |
+| --- | --- | --- |
+| `backend/.env` | `pnpm dev`, `start*`, `db:migrate`, `db:generate`, `db:studio`, `db:migrate:all`, `db:backup`, `db:restore`, `create-superadmin` | **lokalna baza** (`localhost:5435/dmb_dev`); nigdy produkcja |
+| `backend/.env.docker` | tylko komendy `*:local` (`dev:local`, `db:migrate:all:local`) | nakładka: wygrywa z `.env`; `PORT`, `CORS_ORIGINS`, `APP_BASE_URL`, `MAIL_DRIVER=console` |
+| `backend/.env.production.local` | tylko `create-superadmin:file` | `DATABASE_URL` (5432), `MAIL_FROM_EMAIL`, `MAILERSEND_API_KEY` produkcji |
+| `backend/.env.superadmin` | `pnpm local empty`, `create-superadmin:file` | tylko `SUPERADMIN_EMAIL`, `SUPERADMIN_PASSWORD` |
+
+Pliki `.env*` są poza Gitem. `.env` nie może wskazywać na produkcję: wszystkie skrypty bez sufiksu `:local` (w tym `db:restore` z `--wipe` i migracje) czytają właśnie ten plik. Do poleceń na produkcji używaj jawnie `--url-env` albo `.env.production.local`. Wysyłka maili lokalnie: `MAIL_DRIVER=mailersend` plus `MAILERSEND_API_KEY` i `MAIL_FROM_EMAIL` w `.env` (dla `dev:local` w `.env.docker`, bo ten plik ma pierwszeństwo).
+
 Uwagi: nigdy nie ustawiać `MAIL_DRIVER=mailersend` na kopii produkcji (prawdziwe adresy); po testach usunąć kopię i, jeśli niepotrzebna, bazę (`docker compose down -v`). Nie uruchamiać `dev:local` równolegle z `pnpm dev` na tym samym porcie.
 
 ## Znane pułapki
