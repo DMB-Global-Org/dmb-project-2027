@@ -84,6 +84,8 @@ Jedno wejście: `pnpm local <polecenie>` (z katalogu głównego; decyzja 91). Je
 
 Polecenia zapisują wyłącznie do `localhost:5435`, bez pytań o potwierdzenie hosta. Starsze skrypty (`db:backup`, `db:restore:local` itd.) nadal działają.
 
+Dostęp do lokalnej bazy z klienta SQL (DataGrip w IDE itp.): host `localhost`, port `5435`, baza `dmb_dev`, użytkownik `postgres`, hasło `postgres`, SSL wyłączony; adres `postgres://postgres:postgres@localhost:5435/dmb_dev`. To dane lokalnego kontenera, nie konto w aplikacji (do logowania w aplikacji służy SuperAdministrator z `backend/.env.superadmin`). Tabele są w schemacie `app` i `org_*`, więc w kliencie włączyć wszystkie schematy (domyślnie widać tylko pusty `public`).
+
 Uwagi: nigdy nie ustawiać `MAIL_DRIVER=mailersend` na kopii produkcji (prawdziwe adresy); po testach usunąć kopię i, jeśli niepotrzebna, bazę (`docker compose down -v`). Nie uruchamiać `dev:local` równolegle z `pnpm dev` na tym samym porcie.
 
 ## Znane pułapki
